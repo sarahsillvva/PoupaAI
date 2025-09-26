@@ -15,6 +15,8 @@ const Suggestions: React.FC<SuggestionsProps> = ({ expenses, totalIncome }) => {
         return ["Defina seu valor disponível para receber sugestões."];
     }
     
+    // FIX: Use a generic argument for reduce to ensure `categoryTotals` is correctly typed as Record<string, number>.
+    // This prevents potential runtime errors by ensuring `amount` is a number before arithmetic operations.
     const categoryTotals = expenses.reduce<Record<string, number>>((acc, expense) => {
       acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
       return acc;

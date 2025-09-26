@@ -1,13 +1,12 @@
 import React from 'react';
-import { PlusCircle, ShoppingCart, FileDown } from 'lucide-react';
+import { ShoppingCart, FileDown } from 'lucide-react';
 
 interface HeaderProps {
-    onAddExpense: () => void;
     onPurchaseAdvisor: () => void;
     onGeneratePDF: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onAddExpense, onPurchaseAdvisor, onGeneratePDF }) => {
+const Header: React.FC<HeaderProps> = ({ onPurchaseAdvisor, onGeneratePDF }) => {
   return (
     <header className="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-40">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -18,7 +17,7 @@ const Header: React.FC<HeaderProps> = ({ onAddExpense, onPurchaseAdvisor, onGene
           <div className="flex items-center space-x-3">
             <button
               onClick={onPurchaseAdvisor}
-              className="hidden sm:flex items-center gap-2 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              className="flex items-center gap-2 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
               title="Posso Comprar?"
             >
               <ShoppingCart size={18} />
@@ -31,14 +30,6 @@ const Header: React.FC<HeaderProps> = ({ onAddExpense, onPurchaseAdvisor, onGene
             >
               <FileDown size={18} />
               <span className="hidden md:inline">Relatório PDF</span>
-            </button>
-            <button
-              onClick={onAddExpense}
-              className="flex items-center gap-2 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              title="Adicionar Nova Despesa"
-            >
-              <PlusCircle size={20} />
-              <span className="hidden md:inline">Nova Despesa</span>
             </button>
           </div>
         </div>

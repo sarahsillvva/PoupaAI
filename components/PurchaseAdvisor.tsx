@@ -21,6 +21,8 @@ const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount,
   const [result, setResult] = useState<Result>({status: 'none', message: ''});
 
   const categorySpending = useMemo(() => {
+    // FIX: Use a generic argument for reduce to ensure the result is correctly typed as Record<string, number>.
+    // This prevents potential runtime errors by ensuring `currentSpent` is a number before arithmetic operations.
     return currentExpenses.reduce<Record<string, number>>((acc, expense) => {
         acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
         return acc;

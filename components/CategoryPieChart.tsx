@@ -11,8 +11,8 @@ interface CategoryPieChartProps {
 
 const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ expenses, totalIncome }) => {
   const data = useMemo(() => {
-    // FIX: Provide generic type argument to `reduce` to ensure `categoryTotals` is correctly typed.
-    // This resolves issues with arithmetic operations on `amount` later.
+    // FIX: Use a generic argument for reduce to ensure `categoryTotals` is correctly typed as Record<string, number>.
+    // This resolves TypeScript errors where `amount` and `value` were not inferred as numbers for arithmetic operations.
     const categoryTotals = expenses.reduce<Record<string, number>>((acc, expense) => {
       acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
       return acc;
