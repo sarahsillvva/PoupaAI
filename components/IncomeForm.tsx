@@ -7,14 +7,30 @@ interface IncomeFormProps {
   currentTotalAmount: number;
 }
 
+const formatToCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+};
+
+const parseFromCurrency = (value: string): number => {
+  const digitsOnly = value.replace(/\D/g, '');
+  if (!digitsOnly) return 0;
+  return parseFloat(digitsOnly) / 100;
+};
+
 const IncomeForm: React.FC<IncomeFormProps> = ({ onClose, onSave, currentTotalAmount }) => {
-  const [totalAmount, setTotalAmount] = useState(currentTotalAmount.toString());
+  const [totalAmount, setTotalAmount] = useState(formatToCurrency(currentTotalAmount));
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numericValue = parseFromCurrency(value);
+    setTotalAmount(formatToCurrency(numericValue));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    onSave(parseFloat(totalAmount));
+    onSave(parseFromCurrency(totalAmount));
     setIsSubmitting(false);
   };
 
@@ -29,15 +45,15 @@ const IncomeForm: React.FC<IncomeFormProps> = ({ onClose, onSave, currentTotalAm
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label htmlFor="totalAmount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Valor Total Disponível para o Mês (R$)</label>
+            <label htmlFor="totalAmount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Valor Total Disponível para o Mês</label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id="totalAmount"
               value={totalAmount}
-              onChange={(e) => setTotalAmount(e.target.value)}
+              onChange={handleAmountChange}
               className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white"
               required
-              step="0.01"
             />
           </div>
           <div className="pt-4 flex justify-end gap-3">

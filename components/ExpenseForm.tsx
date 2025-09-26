@@ -10,6 +10,16 @@ interface ExpenseFormProps {
   expenseToEdit: Expense | null;
 }
 
+const formatToCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+};
+
+const parseFromCurrency = (value: string): number => {
+  const digitsOnly = value.replace(/\D/g, '');
+  if (!digitsOnly) return 0;
+  return parseFloat(digitsOnly) / 100;
+};
+
 const suggestCategoryLocal = (description: string): Category => {
     const lowerDesc = description.toLowerCase();
     if (/(aluguel|luz|água|internet|condomínio|gás)/.test(lowerDesc)) return Category.FIXED_COSTS;
@@ -36,13 +46,19 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
   useEffect(() => {
     if (expenseToEdit) {
       setName(expenseToEdit.name);
-      setAmount(expenseToEdit.amount.toString());
+      setAmount(formatToCurrency(expenseToEdit.amount));
       setCategory(expenseToEdit.category);
       setDueDate(expenseToEdit.dueDate);
       setInstallmentsTotal(expenseToEdit.installments?.total.toString() || '1');
       setIsRecurring(expenseToEdit.recurrence === 'monthly');
     }
   }, [expenseToEdit]);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numericValue = parseFromCurrency(value);
+    setAmount(formatToCurrency(numericValue));
+  };
 
   const handleDescriptionBlur = useCallback(() => {
     if (name.trim().length > 3 && !isEditing) { // Only suggest for new expenses
@@ -53,8 +69,9 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !amount || !dueDate) {
-      alert('Por favor, preencha todos os campos obrigatórios.');
+    const numericAmount = parseFromCurrency(amount);
+    if (!name || numericAmount <= 0 || !dueDate) {
+      alert('Por favor, preencha todos os campos obrigatórios com valores válidos.');
       return;
     }
 
@@ -64,7 +81,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
       const updatedExpense: Expense = {
         ...expenseToEdit,
         name,
-        amount: parseFloat(amount),
+        amount: numericAmount,
         category,
         dueDate,
         recurrence: isRecurring ? 'monthly' : undefined,
@@ -73,7 +90,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
     } else {
       const expenseData: Omit<Expense, 'id'> = {
         name,
-        amount: parseFloat(amount),
+        amount: numericAmount,
         category,
         dueDate,
         recurrence: isRecurring ? 'monthly' : undefined,
@@ -115,15 +132,16 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Valor (R$)</label>
+              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Valor</label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 id="amount"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={handleAmountChange}
+                placeholder="R$ 0,00"
                 className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white"
                 required
-                step="0.01"
               />
             </div>
              <div>

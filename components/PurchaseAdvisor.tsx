@@ -14,6 +14,18 @@ type Result = {
     message: string;
 }
 
+const formatToCurrency = (value: number): string => {
+  if (value === 0) return '';
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+};
+
+const parseFromCurrency = (value: string): number => {
+  const digitsOnly = value.replace(/\D/g, '');
+  if (!digitsOnly) return 0;
+  return parseFloat(digitsOnly) / 100;
+};
+
+
 const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount, currentExpenses }) => {
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
@@ -29,10 +41,16 @@ const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount,
     }, {});
   }, [currentExpenses]);
   
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numericValue = parseFromCurrency(value);
+    setAmount(formatToCurrency(numericValue));
+  };
+
   const handleCheck = () => {
-    const purchaseAmount = parseFloat(amount);
-    if (!name || !purchaseAmount || category === Category.UNCATEGORIZED) {
-        setResult({status: 'no', message: "Por favor, preencha todos os campos."});
+    const purchaseAmount = parseFromCurrency(amount);
+    if (!name || purchaseAmount <= 0 || category === Category.UNCATEGORIZED) {
+        setResult({status: 'no', message: "Por favor, preencha todos os campos com valores válidos."});
         return;
     }
     
@@ -93,14 +111,15 @@ const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount,
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="purchase-amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Valor (R$)</label>
+              <label htmlFor="purchase-amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Valor</label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 id="purchase-amount"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={handleAmountChange}
+                placeholder="R$ 0,00"
                 className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white"
-                step="0.01"
               />
             </div>
              <div>
