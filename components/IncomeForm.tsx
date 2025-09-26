@@ -35,7 +35,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({ onClose, onSave, currentTotalAm
               id="totalAmount"
               value={totalAmount}
               onChange={(e) => setTotalAmount(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white"
               required
               step="0.01"
             />
