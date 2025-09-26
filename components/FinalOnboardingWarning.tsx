@@ -7,7 +7,7 @@ interface FinalOnboardingWarningProps {
 
 const FinalOnboardingWarning: React.FC<FinalOnboardingWarningProps> = ({ onClose }) => {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 z-[10002] flex justify-center items-center p-4" aria-modal="true" role="dialog">
+    <div className="fixed inset-0 h-screen w-screen bg-black bg-opacity-60 z-[10002] flex justify-center items-center p-4" aria-modal="true" role="dialog">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md relative">
         <div className="p-6">
           <div className="flex flex-col items-center text-center">

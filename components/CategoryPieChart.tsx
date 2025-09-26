@@ -33,7 +33,7 @@ const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ expenses, totalInco
       <Card>
         <div className="p-6">
           <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Divisão de Gastos por Categoria</h3>
-          <div className="h-80 flex items-center justify-center text-gray-500">
+          <div className="h-80 flex items-center justify-center text-gray-500 dark:text-gray-400">
             Nenhuma despesa registrada para este mês.
           </div>
         </div>
@@ -45,10 +45,10 @@ const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ expenses, totalInco
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white dark:bg-gray-700 p-2 border border-gray-200 dark:border-gray-600 rounded shadow-lg">
-          <p className="font-bold">{`${data.name}`}</p>
-          <p>{`Valor: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.value)}`}</p>
-          <p>{`Percentual da Renda: ${data.percentage.toFixed(2)}%`}</p>
+        <div className="bg-white dark:bg-gray-700 p-2 border border-gray-200 dark:border-gray-600 rounded shadow-lg text-gray-800 dark:text-gray-200">
+          <p className="font-bold text-gray-900 dark:text-white">{`${data.name}`}</p>
+          <p className="text-sm">{`Valor: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.value)}`}</p>
+          <p className="text-sm">{`Percentual da Renda: ${data.percentage.toFixed(2)}%`}</p>
         </div>
       );
     }

@@ -109,10 +109,10 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
   };
   
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+    <div className="fixed inset-0 h-screen w-screen bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg relative max-h-full overflow-y-auto">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-          <h2 className="text-xl font-bold">{isEditing ? 'Editar Despesa' : 'Adicionar Nova Despesa'}</h2>
+          <h2 className="text-xl font-bold text-gray-700 dark:text-gray-300">{isEditing ? 'Editar Despesa' : 'Adicionar Nova Despesa'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
             <X size={24} />
           </button>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Expense, Category } from '../types';
+import { Expense, Category, CategoryInfo } from '../types';
 import { CATEGORIES } from '../constants';
 import { X, CheckCircle, XCircle } from 'lucide-react';
 
@@ -7,6 +7,7 @@ interface PurchaseAdvisorProps {
   onClose: () => void;
   totalAmount: number;
   currentExpenses: Expense[];
+  categoryConfig: Record<Category, CategoryInfo>;
 }
 
 type Result = {
@@ -26,7 +27,7 @@ const parseFromCurrency = (value: string): number => {
 };
 
 
-const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount, currentExpenses }) => {
+const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount, currentExpenses, categoryConfig }) => {
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<Category>(Category.UNCATEGORIZED);
@@ -48,13 +49,14 @@ const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount,
   };
 
   const handleCheck = () => {
+    // FIX: Corrected typo in function name from parseFromcurrency to parseFromCurrency.
     const purchaseAmount = parseFromCurrency(amount);
     if (!name || purchaseAmount <= 0 || category === Category.UNCATEGORIZED) {
         setResult({status: 'no', message: "Por favor, preencha todos os campos com valores válidos."});
         return;
     }
     
-    const categoryInfo = CATEGORIES[category];
+    const categoryInfo = categoryConfig[category];
     const categoryTarget = categoryInfo.target;
     const categoryBudget = totalAmount * categoryTarget;
     const currentSpent = categorySpending[category] || 0;
@@ -90,7 +92,7 @@ const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount,
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+    <div className="fixed inset-0 h-screen w-screen bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg relative">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
           <h2 className="text-xl font-bold text-gray-700 dark:text-gray-300" >Posso Fazer Essa Compra?</h2>
@@ -131,7 +133,7 @@ const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount,
                 onChange={(e) => setCategory(e.target.value as Category)}
                 className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white"
                 >
-                {Object.entries(CATEGORIES).map(([key, value]) => (
+                {Object.entries(categoryConfig).map(([key, value]) => (
                   <option key={key} value={key}>{value.name}</option>
                 ))}
               </select>

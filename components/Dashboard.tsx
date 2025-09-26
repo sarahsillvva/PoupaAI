@@ -8,9 +8,11 @@ import ExpenseForm from './ExpenseForm';
 import IncomeForm from './IncomeForm';
 import PurchaseAdvisor from './PurchaseAdvisor';
 import WarningModal from './WarningModal';
-import { Expense } from '../types';
+import BudgetConfigModal from './BudgetConfigModal';
+import { Expense, Category, CategoryInfo } from '../types';
 import * as api from '../services/apiService';
 import { generatePDF } from '../utils/pdfGenerator';
+import { CATEGORIES } from '../constants';
 
 const Dashboard: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -27,15 +29,33 @@ const Dashboard: React.FC = () => {
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
 
+  const [categoryConfig, setCategoryConfig] = useState<Record<Category, CategoryInfo> | null>(null);
+  const [isBudgetConfigOpen, setIsBudgetConfigOpen] = useState(false);
+
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
+
+  const mergeConfig = (customTargets: api.CategoryTargets) => {
+      const newConfig = JSON.parse(JSON.stringify(CATEGORIES)); // Deep copy defaults
+      for (const key in customTargets) {
+          const categoryKey = key as Category;
+          if (newConfig[categoryKey] && customTargets[categoryKey] !== undefined) {
+              newConfig[categoryKey].target = customTargets[categoryKey]!.target;
+          }
+      }
+      return newConfig;
+  };
 
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const { totalAmount, expenses: fetchedExpenses } = await api.getFinancialData();
+      const [{ totalAmount, expenses: fetchedExpenses }, customTargets] = await Promise.all([
+        api.getFinancialData(),
+        api.getCustomCategoryTargets()
+      ]);
       setTotalIncome(totalAmount);
       setExpenses(fetchedExpenses);
+      setCategoryConfig(mergeConfig(customTargets));
       setError(null);
     } catch (err) {
       setError('Falha ao carregar dados financeiros. Tente novamente mais tarde.');
@@ -49,6 +69,15 @@ const Dashboard: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
+  // Efeito para corrigir o scroll inicial
+  useEffect(() => {
+    if (!isLoading) {
+      // Quando o conteúdo é carregado, a página pode pular.
+      // Forçamos o scroll para o topo para garantir que o tour comece na posição correta.
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+  }, [isLoading]);
+
   // Event listeners for header buttons
   useEffect(() => {
     const handleAddExpense = () => {
@@ -56,10 +85,15 @@ const Dashboard: React.FC = () => {
       setIsExpenseFormOpen(true);
     };
     const handleOpenPurchaseAdvisor = () => setIsPurchaseAdvisorOpen(true);
-    const handleGeneratePDF = () => {
+    const handleGeneratePDF = async () => {
         // @ts-ignore
         if (typeof jspdf !== 'undefined') {
-            generatePDF(totalIncome, expenses);
+            try {
+                await generatePDF(totalIncome, expenses);
+            } catch (pdfError) {
+                console.error("Failed to generate PDF:", pdfError);
+                alert("Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.");
+            }
         } else {
             console.error("jsPDF not loaded");
             alert("Ocorreu um erro ao gerar o PDF. A biblioteca PDF não foi carregada.");
@@ -143,7 +177,28 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  const handleSaveCategoryConfig = async (newTargets: api.CategoryTargets) => {
+    try {
+        await api.saveCustomCategoryTargets(newTargets);
+        const customTargets = await api.getCustomCategoryTargets();
+        setCategoryConfig(mergeConfig(customTargets));
+        setIsBudgetConfigOpen(false);
+    } catch (err) {
+        setError('Falha ao salvar a configuração de metas.');
+    }
+  };
+
+  const handleResetCategoryConfig = async () => {
+      try {
+          await api.resetCustomCategoryTargets();
+          setCategoryConfig(JSON.parse(JSON.stringify(CATEGORIES)));
+          setIsBudgetConfigOpen(false);
+      } catch (err) {
+          setError('Falha ao redefinir as metas.');
+      }
+  };
+
+  if (isLoading || !categoryConfig) {
     return <div className="flex justify-center items-center h-screen"><div className="text-xl text-gray-500 dark:text-gray-400">Carregando dados...</div></div>;
   }
 
@@ -172,7 +227,12 @@ const Dashboard: React.FC = () => {
           <InstallmentsTimeline allExpenses={expenses} />
         </div>
       </div>
-      <Suggestions expenses={currentMonthExpenses} totalIncome={totalIncome} />
+      <Suggestions
+        expenses={currentMonthExpenses}
+        totalIncome={totalIncome}
+        categoryConfig={categoryConfig}
+        onOpenBudgetConfig={() => setIsBudgetConfigOpen(true)}
+      />
 
       {isExpenseFormOpen && (
         <ExpenseForm
@@ -194,6 +254,7 @@ const Dashboard: React.FC = () => {
           onClose={() => setIsPurchaseAdvisorOpen(false)}
           totalAmount={totalIncome}
           currentExpenses={currentMonthExpenses}
+          categoryConfig={categoryConfig}
         />
       )}
       {isWarningModalOpen && expenseToDelete && (
@@ -206,6 +267,15 @@ const Dashboard: React.FC = () => {
           <p>Você tem certeza que deseja excluir a despesa "{expenseToDelete.name}"?</p>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Esta ação não pode ser desfeita.</p>
         </WarningModal>
+      )}
+      {isBudgetConfigOpen && (
+        <BudgetConfigModal
+            isOpen={isBudgetConfigOpen}
+            onClose={() => setIsBudgetConfigOpen(false)}
+            onSave={handleSaveCategoryConfig}
+            onReset={handleResetCategoryConfig}
+            currentConfig={categoryConfig}
+        />
       )}
     </main>
   );

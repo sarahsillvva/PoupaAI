@@ -1,12 +1,41 @@
 import { Expense } from '../types';
-import { CATEGORIES } from '../constants';
+import { CATEGORIES, logoSrc } from '../constants';
 
 declare const jspdf: any;
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 const formatDate = (date: string) => new Date(date).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 
-export const generatePDF = (totalAmount: number, expenses: Expense[]) => {
+// Helper function to convert SVG data URL to PNG data URL
+const convertSvgToPng = (svgDataUrl: string, width: number, height: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            
+            if (!ctx) {
+                return reject(new Error('Failed to get canvas context'));
+            }
+            
+            ctx.drawImage(img, 0, 0, width, height);
+            const pngDataUrl = canvas.toDataURL('image/png');
+            resolve(pngDataUrl);
+        };
+        
+        img.onerror = () => {
+            reject(new Error('Failed to load SVG image for conversion'));
+        };
+        
+        img.src = svgDataUrl;
+    });
+};
+
+
+export const generatePDF = async (totalAmount: number, expenses: Expense[]) => {
   const { jsPDF } = jspdf;
   const doc = new jsPDF();
 
@@ -24,12 +53,24 @@ export const generatePDF = (totalAmount: number, expenses: Expense[]) => {
   const balance = totalAmount - totalExpenses;
 
   // --- Header ---
-  doc.setFontSize(20);
-  doc.text('Relatório Financeiro Mensal', 105, 20, { align: 'center' });
-  doc.setFontSize(12);
-  doc.text(`Relatório gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 105, 28, { align: 'center' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  const logoSize = 30;
 
-  let y = 40;
+  try {
+    const pngLogoSrc = await convertSvgToPng(logoSrc, 256, 256); // Convert with high resolution for quality
+    doc.addImage(pngLogoSrc, 'PNG', margin, 15, logoSize, logoSize);
+  } catch(e) {
+      console.error("Could not add logo to PDF:", e);
+      // Continue without logo if conversion fails
+  }
+
+  doc.setFontSize(20);
+  doc.text('Relatório Financeiro Mensal', pageWidth / 2, 25, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text(`Relatório gerado em: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth / 2, 35, { align: 'center' });
+
+  let y = 55;
 
   // --- Summary ---
   doc.setFontSize(16);

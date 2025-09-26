@@ -148,7 +148,7 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ steps, onComplete }) =>
   return (
     <>
       <div 
-        className="fixed inset-0 z-[9999]"
+        className="fixed inset-0 h-screen w-screen z-[9999]"
         onClick={handleSkip}
       />
       
@@ -190,7 +190,7 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ steps, onComplete }) =>
           {currentStep?.content}
         </p>
         <div className="flex justify-between items-center">
-          <span className="text-xs text-gray-500">{`${currentStepIndex + 1} de ${steps.length}`}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">{`${currentStepIndex + 1} de ${steps.length}`}</span>
           <div>
              <button
               onClick={handleSkip}

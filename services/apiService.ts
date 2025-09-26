@@ -3,11 +3,15 @@ import { Expense, Category } from '../types';
 export type NewExpenseData = Omit<Expense, 'id'>;
 
 const STORAGE_KEY = 'poupa-ai-financials';
+const CATEGORY_TARGETS_KEY = 'poupa-ai-category-targets';
 
 type StoredData = {
   totalAmount: number;
   expenses: Expense[];
 };
+
+export type CategoryTargets = Partial<Record<Category, { target: number }>>;
+
 
 const getStoredData = (): StoredData => {
   const stored = localStorage.getItem(STORAGE_KEY);
@@ -62,6 +66,25 @@ export const deleteExpense = async (id: string): Promise<void> => {
   setStoredData(data);
   return Promise.resolve();
 };
+
+export const getCustomCategoryTargets = async (): Promise<CategoryTargets> => {
+    const stored = localStorage.getItem(CATEGORY_TARGETS_KEY);
+    if (stored) {
+        return Promise.resolve(JSON.parse(stored));
+    }
+    return Promise.resolve({});
+};
+
+export const saveCustomCategoryTargets = async (targets: CategoryTargets): Promise<void> => {
+    localStorage.setItem(CATEGORY_TARGETS_KEY, JSON.stringify(targets));
+    return Promise.resolve();
+};
+
+export const resetCustomCategoryTargets = async (): Promise<void> => {
+    localStorage.removeItem(CATEGORY_TARGETS_KEY);
+    return Promise.resolve();
+};
+
 
 // A função de sugestão de categoria é local e não precisa de API
 export const suggestCategory = async (description: string): Promise<{ category: Category }> => {

@@ -35,7 +35,7 @@ const InstallmentsTimeline: React.FC<InstallmentsTimelineProps> = ({ allExpenses
             {futureInstallments.map(expense => (
               <li key={expense.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
                 <div>
-                  <p className="font-semibold">{expense.name}</p>
+                  <p className="font-semibold text-gray-800 dark:text-gray-200">{expense.name}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Vencimento: {new Date(expense.dueDate).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}
                   </p>
