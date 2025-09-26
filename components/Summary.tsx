@@ -29,12 +29,12 @@ const Summary: React.FC<SummaryProps> = ({ totalIncome, totalExpenses, balance, 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <SummaryCard 
-            title="Renda Total"
+            title="Valor Disponível"
             amount={totalIncome}
             icon={<ArrowUpCircle className="h-8 w-8 text-white"/>}
             colorClass="bg-green-500"
         >
-          <button onClick={onEditIncome} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white" aria-label="Editar Renda">
+          <button onClick={onEditIncome} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white" aria-label="Editar Valor Disponível">
             <Edit size={20}/>
           </button>
         </SummaryCard>

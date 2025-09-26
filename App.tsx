@@ -1,67 +1,67 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { FinancialData, Expense, Income } from './types';
-import { fetchFinancialData, saveExpense, updateExpense, saveIncome } from './services/apiService';
+import React, { useState, useCallback } from 'react';
+// FIX: Import `Category` enum to correctly type initial expenses.
+import { Expense, Category } from './types';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import ExpenseForm from './components/ExpenseForm';
 import IncomeForm from './components/IncomeForm';
+import PurchaseAdvisor from './components/PurchaseAdvisor';
+import { generatePDF } from './utils/pdfGenerator';
 import { PlusCircle } from 'lucide-react';
 
+const initialExpenses: Expense[] = [
+    // FIX: Use `Category` enum instead of raw strings to match the `Expense` type.
+    { id: '1', name: 'Aluguel', amount: 1200, category: Category.FIXED_COSTS, dueDate: '2024-07-05', recurrence: 'monthly' },
+    { id: '2', name: 'Supermercado', amount: 800, category: Category.COMFORT, dueDate: '2024-07-15' },
+    { id: '3', name: 'Netflix', amount: 39.90, category: Category.FIXED_COSTS, dueDate: '2024-07-20', recurrence: 'monthly' },
+    { id: '4', name: 'Celular Novo', amount: 400, category: Category.GOALS, dueDate: '2024-07-28', installments: { current: 3, total: 10 } },
+];
+
 const App: React.FC = () => {
-  const [data, setData] = useState<FinancialData | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [totalAmount, setTotalAmount] = useState<number>(6500);
+  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
+  
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState<boolean>(false);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState<boolean>(false);
+  const [isAdvisorModalOpen, setIsAdvisorModalOpen] = useState<boolean>(false);
+  
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
-  const loadData = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const financialData = await fetchFinancialData();
-      setData(financialData);
-      setError(null);
-    } catch (err) {
-      setError('Falha ao carregar os dados financeiros.');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+  const handleSaveExpense = (expenseData: Omit<Expense, 'id'>) => {
+    if (expenseData.installments && expenseData.installments.total > 1) {
+        const newExpenses: Expense[] = [];
+        const baseId = crypto.randomUUID();
+        for (let i = 0; i < expenseData.installments.total; i++) {
+            const expenseDate = new Date(expenseData.dueDate);
+            expenseDate.setMonth(expenseDate.getMonth() + i);
+            newExpenses.push({
+                ...expenseData,
+                id: `${baseId}-${i}`,
+                dueDate: expenseDate.toISOString().split('T')[0],
+                installments: { current: i + 1, total: expenseData.installments.total },
+            });
+        }
+        setExpenses(prev => [...prev, ...newExpenses]);
+    } else {
+        const newExpense: Expense = { ...expenseData, id: crypto.randomUUID() };
+        setExpenses(prev => [...prev, newExpense]);
     }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const handleAddExpense = async (expenseData: Omit<Expense, 'id'>) => {
-    try {
-      await saveExpense(expenseData);
-      await loadData(); // Reload all data to reflect changes
-      closeExpenseModal();
-    } catch (err) {
-      console.error('Failed to add expense:', err);
-    }
+    closeExpenseModal();
   };
   
-  const handleUpdateExpense = async (expenseData: Expense) => {
-    try {
-      await updateExpense(expenseData);
-      await loadData();
-      closeExpenseModal();
-    } catch(err) {
-      console.error('Failed to update expense:', err);
-    }
+  const handleUpdateExpense = (expenseData: Expense) => {
+    setExpenses(prev => prev.map(e => e.id === expenseData.id ? expenseData : e));
+    closeExpenseModal();
   }
   
-  const handleSaveIncome = async (incomeData: Income) => {
-    try {
-      await saveIncome(incomeData);
-      await loadData();
-      setIsIncomeModalOpen(false);
-    } catch(err) {
-      console.error('Failed to save income:', err);
-    }
+  const handleSaveIncome = (newTotal: number) => {
+    setTotalAmount(newTotal);
+    setIsIncomeModalOpen(false);
   }
+
+  const handleExportPDF = () => {
+    generatePDF(totalAmount, expenses);
+  };
   
   const openExpenseModalToEdit = (expense: Expense) => {
     setEditingExpense(expense);
@@ -77,15 +77,14 @@ const App: React.FC = () => {
     <div className="min-h-screen text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-900">
       <Header />
       <main className="p-4 sm:p-6 lg:p-8">
-        {isLoading && <p className="text-center text-lg">Carregando dados...</p>}
-        {error && <p className="text-center text-lg text-red-500">{error}</p>}
-        {data && !isLoading && !error && (
-          <Dashboard 
-            data={data} 
-            onEditExpense={openExpenseModalToEdit}
-            onEditIncome={() => setIsIncomeModalOpen(true)}
-          />
-        )}
+        <Dashboard 
+          totalAmount={totalAmount}
+          expenses={expenses}
+          onEditExpense={openExpenseModalToEdit}
+          onEditIncome={() => setIsIncomeModalOpen(true)}
+          onOpenAdvisor={() => setIsAdvisorModalOpen(true)}
+          onExportPDF={handleExportPDF}
+        />
       </main>
 
       <button
@@ -99,17 +98,25 @@ const App: React.FC = () => {
       {isExpenseModalOpen && (
         <ExpenseForm
           onClose={closeExpenseModal}
-          onSaveAdd={handleAddExpense}
+          onSaveAdd={handleSaveExpense}
           onSaveEdit={handleUpdateExpense}
           expenseToEdit={editingExpense}
         />
       )}
       
-      {isIncomeModalOpen && data && (
+      {isIncomeModalOpen && (
         <IncomeForm 
           onClose={() => setIsIncomeModalOpen(false)}
           onSave={handleSaveIncome}
-          currentIncome={data.income}
+          currentTotalAmount={totalAmount}
+        />
+      )}
+
+      {isAdvisorModalOpen && (
+        <PurchaseAdvisor
+          onClose={() => setIsAdvisorModalOpen(false)}
+          totalAmount={totalAmount}
+          currentExpenses={expenses}
         />
       )}
     </div>

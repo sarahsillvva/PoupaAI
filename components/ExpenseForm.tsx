@@ -1,15 +1,26 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Expense, Category } from '../types';
 import { CATEGORIES } from '../constants';
-import { suggestCategory } from '../services/apiService';
 import { X } from 'lucide-react';
 
 interface ExpenseFormProps {
   onClose: () => void;
-  onSaveAdd: (expense: Omit<Expense, 'id'>) => Promise<void>;
-  onSaveEdit: (expense: Expense) => Promise<void>;
+  onSaveAdd: (expense: Omit<Expense, 'id'>) => void;
+  onSaveEdit: (expense: Expense) => void;
   expenseToEdit: Expense | null;
 }
+
+const suggestCategoryLocal = (description: string): Category => {
+    const lowerDesc = description.toLowerCase();
+    if (/(aluguel|luz|água|internet|condomínio|gás)/.test(lowerDesc)) return Category.FIXED_COSTS;
+    if (/(supermercado|feira|padaria|transporte|gasolina)/.test(lowerDesc)) return Category.COMFORT;
+    if (/(restaurante|bar|cinema|show|festa|viagem curta|ifood)/.test(lowerDesc)) return Category.PLEASURES;
+    if (/(curso|livro|workshop|palestra)/.test(lowerDesc)) return Category.KNOWLEDGE;
+    if (/(aporte|investimento|tesouro|cdb|ações|fii)/.test(lowerDesc)) return Category.INVESTMENTS;
+    if (/(viagem|carro|casa|reforma|meta)/.test(lowerDesc)) return Category.GOALS;
+    return Category.UNCATEGORIZED;
+};
+
 
 const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdit, expenseToEdit }) => {
   const [name, setName] = useState('');
@@ -17,8 +28,8 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
   const [category, setCategory] = useState<Category>(Category.UNCATEGORIZED);
   const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]);
   const [installmentsTotal, setInstallmentsTotal] = useState('1');
+  const [isRecurring, setIsRecurring] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuggesting, setIsSuggesting] = useState(false);
   
   const isEditing = !!expenseToEdit;
 
@@ -29,19 +40,18 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
       setCategory(expenseToEdit.category);
       setDueDate(expenseToEdit.dueDate);
       setInstallmentsTotal(expenseToEdit.installments?.total.toString() || '1');
+      setIsRecurring(expenseToEdit.recurrence === 'monthly');
     }
   }, [expenseToEdit]);
 
-  const handleDescriptionBlur = useCallback(async () => {
+  const handleDescriptionBlur = useCallback(() => {
     if (name.trim().length > 3 && !isEditing) { // Only suggest for new expenses
-      setIsSuggesting(true);
-      const suggested = await suggestCategory(name);
+      const suggested = suggestCategoryLocal(name);
       setCategory(suggested);
-      setIsSuggesting(false);
     }
   }, [name, isEditing]);
   
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !amount || !dueDate) {
       alert('Por favor, preencha todos os campos obrigatórios.');
@@ -57,15 +67,16 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
         amount: parseFloat(amount),
         category,
         dueDate,
-        // Editing installments is complex and not handled in this version for simplicity
+        recurrence: isRecurring ? 'monthly' : undefined,
       };
-      await onSaveEdit(updatedExpense);
+      onSaveEdit(updatedExpense);
     } else {
       const expenseData: Omit<Expense, 'id'> = {
         name,
         amount: parseFloat(amount),
         category,
         dueDate,
+        recurrence: isRecurring ? 'monthly' : undefined,
       };
       const totalInstallments = parseInt(installmentsTotal, 10);
       if (totalInstallments > 1) {
@@ -74,7 +85,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
           total: totalInstallments
         };
       }
-      await onSaveAdd(expenseData);
+      onSaveAdd(expenseData);
     }
     
     setIsSubmitting(false);
@@ -129,7 +140,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Categoria {isSuggesting && '(Sugerindo...)'}</label>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Categoria</label>
               <select
                 id="category"
                 value={category}
@@ -150,9 +161,21 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
                 onChange={(e) => setInstallmentsTotal(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 min="1"
-                disabled={isEditing} // Prevent editing installments for simplicity
+                disabled={isEditing}
                 />
             </div>
+          </div>
+          <div className="flex items-center">
+            <input
+              id="recurring"
+              type="checkbox"
+              checked={isRecurring}
+              onChange={(e) => setIsRecurring(e.target.checked)}
+              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+            />
+            <label htmlFor="recurring" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+              Gasto Mensal Recorrente
+            </label>
           </div>
           <div className="pt-4 flex justify-end gap-3">
             <button

@@ -1,4 +1,3 @@
-
 export enum Category {
   INVESTMENTS = 'INVESTMENTS',
   FIXED_COSTS = 'FIXED_COSTS',
@@ -19,16 +18,7 @@ export interface Expense {
     current: number;
     total: number;
   };
-}
-
-export interface Income {
-  salary: number;
-  initialBalance: number;
-}
-
-export interface FinancialData {
-  income: Income;
-  expenses: Expense[];
+  recurrence?: 'monthly';
 }
 
 export interface CategoryInfo {

@@ -12,14 +12,9 @@ interface SuggestionsProps {
 const Suggestions: React.FC<SuggestionsProps> = ({ expenses, totalIncome }) => {
   const suggestions = useMemo(() => {
     if (totalIncome === 0) {
-        return ["Defina sua renda para receber sugestões."];
+        return ["Defina seu valor disponível para receber sugestões."];
     }
-    if (expenses.length === 0) {
-      return ["Adicione algumas despesas para receber sugestões."];
-    }
-
-    // FIX: Provide generic type argument to `reduce` to ensure `categoryTotals` is correctly typed.
-    // This resolves issues with arithmetic operations on `amount` later.
+    
     const categoryTotals = expenses.reduce<Record<string, number>>((acc, expense) => {
       acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
       return acc;
@@ -27,18 +22,30 @@ const Suggestions: React.FC<SuggestionsProps> = ({ expenses, totalIncome }) => {
 
     const newSuggestions: string[] = [];
 
-    Object.entries(categoryTotals).forEach(([categoryKey, amount]) => {
+    Object.keys(CATEGORIES).forEach(categoryKey => {
       const category = categoryKey as Category;
+      if (category === Category.UNCATEGORIZED) return;
+
       const info = CATEGORIES[category];
+      const amount = categoryTotals[category] || 0;
+
       if (info.target > 0) {
         const percentage = amount / totalIncome;
         if (percentage > info.target) {
           newSuggestions.push(
-            `Você gastou ${(percentage * 100).toFixed(0)}% da sua renda em ${info.name}, que está acima da meta de ${(info.target * 100).toFixed(0)}%. Considere reduzir gastos nesta área.`
+            `Você gastou ${(percentage * 100).toFixed(0)}% da sua renda em ${info.name}, acima da meta de ${(info.target * 100).toFixed(0)}%. Considere reduzir gastos aqui.`
           );
         }
       }
     });
+
+    if (!categoryTotals[Category.INVESTMENTS]) {
+        newSuggestions.push(`Lembre-se de alocar ${CATEGORIES.INVESTMENTS.target * 100}% para ${CATEGORIES.INVESTMENTS.name}. Fazer seu dinheiro trabalhar para você é fundamental.`);
+    }
+
+    if (!categoryTotals[Category.KNOWLEDGE]) {
+        newSuggestions.push(`Considere reservar uma parte da sua renda para ${CATEGORIES.KNOWLEDGE.name}. Investir em si mesmo é sempre um bom negócio!`);
+    }
 
     if (newSuggestions.length === 0) {
       return ["Seus gastos estão bem alinhados com as metas. Ótimo trabalho!"];
