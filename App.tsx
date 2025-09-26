@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { PlusCircle } from 'lucide-react';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
+import Footer from './components/Footer';
 import OnboardingTour from './components/OnboardingTour';
 import type { TourStep } from './components/OnboardingTour';
 import FinalOnboardingWarning from './components/FinalOnboardingWarning';
@@ -82,7 +83,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 font-sans">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 font-sans flex flex-col">
       {isTourOpen && <OnboardingTour steps={tourSteps} onComplete={handleTourComplete} />}
       {isFinalWarningOpen && <FinalOnboardingWarning onClose={handleCloseFinalWarning} />}
       
@@ -90,7 +91,11 @@ function App() {
         onPurchaseAdvisor={handlePurchaseAdvisor}
         onGeneratePDF={handleGeneratePDF}
       />
-      <Dashboard />
+      <main className="flex-grow">
+        <Dashboard />
+      </main>
+
+      <Footer />
       
       <button
         id="tour-add-expense"
