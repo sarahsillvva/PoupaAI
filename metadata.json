@@ -1,5 +1,5 @@
 {
-  "name": "Gestor Financeiro Pessoal",
+  "name": "PoupaAI",
   "description": "Um aplicativo web para ajudar a organizar suas finanças pessoais com base no método Investidor Sardinha, com visualização de despesas, categorização automática e sugestões de melhoria.",
   "requestFramePermissions": []
 }

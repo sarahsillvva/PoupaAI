@@ -102,7 +102,7 @@ const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount,
               />
             </div>
              <div>
-                {/* FIX: Corrected typo in closing tag from `glabel` to `label` */}
+                {/* FIX: Corrected typo in closing tag from glabel to label */}
                 <label htmlFor="purchase-category" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Categoria</label>
                 <select
                 id="purchase-category"
