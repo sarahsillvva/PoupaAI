@@ -9,10 +9,10 @@ interface SummaryProps {
   onEditIncome: () => void;
 }
 
-const SummaryCard: React.FC<{ title: string; amount: number; icon: React.ReactNode; colorClass: string; children?: React.ReactNode;}> = ({ title, amount, icon, colorClass, children }) => {
+const SummaryCard: React.FC<{ title: string; amount: number; icon: React.ReactNode; colorClass: string; children?: React.ReactNode; id?: string;}> = ({ title, amount, icon, colorClass, children, id }) => {
     const formattedAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
     return (
-        <Card className="p-6 flex items-center space-x-4 relative">
+        <Card id={id} className="p-6 flex items-center space-x-4 relative">
             <div className={`p-3 rounded-full ${colorClass}`}>
                 {icon}
             </div>
@@ -34,7 +34,7 @@ const Summary: React.FC<SummaryProps> = ({ totalIncome, totalExpenses, balance, 
             icon={<ArrowUpCircle className="h-8 w-8 text-white"/>}
             colorClass="bg-green-500"
         >
-          <button onClick={onEditIncome} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white" aria-label="Editar Valor Disponível">
+          <button id="tour-edit-income" onClick={onEditIncome} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white" aria-label="Editar Valor Disponível">
             <Edit size={20}/>
           </button>
         </SummaryCard>

@@ -16,16 +16,18 @@ const Header: React.FC<HeaderProps> = ({ onPurchaseAdvisor, onGeneratePDF }) => 
           </div>
           <div className="flex items-center space-x-3">
             <button
+              id="tour-purchase-advisor"
               onClick={onPurchaseAdvisor}
-              className="flex items-center gap-2 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              className="flex items-center gap-2 p-2 md:py-2 md:px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
               title="Posso Comprar?"
             >
               <ShoppingCart size={18} />
               <span className="hidden md:inline">Posso Comprar?</span>
             </button>
             <button
+              id="tour-pdf-report"
               onClick={onGeneratePDF}
-              className="hidden sm:flex items-center gap-2 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="flex items-center gap-2 p-2 md:py-2 md:px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               title="Gerar Relatório PDF"
             >
               <FileDown size={18} />

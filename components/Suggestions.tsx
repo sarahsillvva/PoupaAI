@@ -57,7 +57,7 @@ const Suggestions: React.FC<SuggestionsProps> = ({ expenses, totalIncome }) => {
   }, [expenses, totalIncome]);
 
   return (
-    <Card>
+    <Card id="tour-suggestions">
       <div className="p-6">
         <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
             <Lightbulb className="mr-2 text-yellow-400" />
