@@ -9,6 +9,7 @@ import IncomeForm from './IncomeForm';
 import PurchaseAdvisor from './PurchaseAdvisor';
 import WarningModal from './WarningModal';
 import BudgetConfigModal from './BudgetConfigModal';
+import ThirdPartyExpensesList from './ThirdPartyExpensesList';
 import { Expense, Category, CategoryInfo } from '../types';
 import * as api from '../services/apiService';
 import { generatePDF } from '../utils/pdfGenerator';
@@ -72,11 +73,29 @@ const Dashboard: React.FC = () => {
   // Efeito para corrigir o scroll inicial
   useEffect(() => {
     if (!isLoading) {
-      // Quando o conteúdo é carregado, a página pode pular.
-      // Forçamos o scroll para o topo para garantir que o tour comece na posição correta.
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }
   }, [isLoading]);
+  
+  const { personalExpenses, thirdPartyExpenses, totalExpenses, balance } = useMemo(() => {
+    const monthExpenses = expenses.filter(expense => {
+      const expenseDate = new Date(expense.dueDate);
+      return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
+    });
+
+    const personal = monthExpenses.filter(e => !e.payer);
+    const thirdParty = monthExpenses.filter(e => !!e.payer);
+    
+    const total = personal.reduce((acc, expense) => acc + expense.amount, 0);
+    
+    return {
+      personalExpenses: personal,
+      thirdPartyExpenses: thirdParty,
+      totalExpenses: total,
+      balance: totalIncome - total,
+    };
+  }, [expenses, totalIncome, currentMonth, currentYear]);
+
 
   // Event listeners for header buttons
   useEffect(() => {
@@ -89,7 +108,7 @@ const Dashboard: React.FC = () => {
         // @ts-ignore
         if (typeof jspdf !== 'undefined') {
             try {
-                await generatePDF(totalIncome, expenses);
+                await generatePDF(totalIncome, personalExpenses);
             } catch (pdfError) {
                 console.error("Failed to generate PDF:", pdfError);
                 alert("Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.");
@@ -109,20 +128,7 @@ const Dashboard: React.FC = () => {
       window.removeEventListener('open-purchase-advisor', handleOpenPurchaseAdvisor);
       window.removeEventListener('generate-pdf', handleGeneratePDF);
     };
-  }, [totalIncome, expenses]);
-
-  const { currentMonthExpenses, totalExpenses, balance } = useMemo(() => {
-    const filteredExpenses = expenses.filter(expense => {
-      const expenseDate = new Date(expense.dueDate);
-      return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
-    });
-    const total = filteredExpenses.reduce((acc, expense) => acc + expense.amount, 0);
-    return {
-      currentMonthExpenses: filteredExpenses,
-      totalExpenses: total,
-      balance: totalIncome - total,
-    };
-  }, [expenses, totalIncome, currentMonth, currentYear]);
+  }, [totalIncome, personalExpenses]);
 
   const handleSaveExpense = async (expenseData: Omit<Expense, 'id'>) => {
     try {
@@ -217,18 +223,23 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <ExpenseList
-            expenses={currentMonthExpenses}
+            expenses={personalExpenses}
+            onEdit={handleEditExpense}
+            onDelete={handleDeleteRequest}
+          />
+           <ThirdPartyExpensesList
+            expenses={thirdPartyExpenses}
             onEdit={handleEditExpense}
             onDelete={handleDeleteRequest}
           />
         </div>
         <div className="space-y-6">
-          <CategoryPieChart expenses={currentMonthExpenses} totalIncome={totalIncome} />
+          <CategoryPieChart expenses={personalExpenses} totalIncome={totalIncome} />
           <InstallmentsTimeline allExpenses={expenses} />
         </div>
       </div>
       <Suggestions
-        expenses={currentMonthExpenses}
+        expenses={personalExpenses}
         totalIncome={totalIncome}
         categoryConfig={categoryConfig}
         onOpenBudgetConfig={() => setIsBudgetConfigOpen(true)}
@@ -253,7 +264,7 @@ const Dashboard: React.FC = () => {
         <PurchaseAdvisor 
           onClose={() => setIsPurchaseAdvisorOpen(false)}
           totalAmount={totalIncome}
-          currentExpenses={currentMonthExpenses}
+          currentExpenses={personalExpenses}
           categoryConfig={categoryConfig}
         />
       )}

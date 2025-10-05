@@ -30,7 +30,8 @@ const BudgetConfigModal: React.FC<BudgetConfigModalProps> = ({ isOpen, onClose, 
   }, [isOpen, currentConfig]);
 
   const total = useMemo(() => {
-    return Object.values(targets).reduce((acc, val) => acc + (parseFloat(val) || 0), 0);
+    // FIX: Explicitly type the accumulator and value in the reduce function to prevent type errors.
+    return Object.values(targets).reduce((acc: number, val: string) => acc + (parseFloat(val) || 0), 0);
   }, [targets]);
 
   const handleTargetChange = (category: Category, value: string) => {
@@ -46,7 +47,8 @@ const BudgetConfigModal: React.FC<BudgetConfigModalProps> = ({ isOpen, onClose, 
         return;
     }
     const newConfigForSave: CategoryTargets = {};
-    Object.entries(targets).forEach(([key, value]) => {
+    // FIX: Explicitly type the destructured key and value to prevent type errors.
+    Object.entries(targets).forEach(([key, value]: [string, string]) => {
         newConfigForSave[key as Category] = { target: (parseFloat(value) || 0) / 100 };
     });
     onSave(newConfigForSave);

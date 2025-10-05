@@ -19,6 +19,7 @@ export interface Expense {
     total: number;
   };
   recurrence?: 'monthly';
+  payer?: string;
 }
 
 export interface CategoryInfo {

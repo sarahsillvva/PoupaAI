@@ -34,9 +34,8 @@ const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount,
   const [result, setResult] = useState<Result>({status: 'none', message: ''});
 
   const categorySpending = useMemo(() => {
-    // FIX: Use a generic argument for reduce to ensure the result is correctly typed as Record<string, number>.
-    // This prevents potential runtime errors by ensuring `currentSpent` is a number before arithmetic operations.
-    return currentExpenses.reduce<Record<string, number>>((acc, expense) => {
+    // FIX: Explicitly type the accumulator in the reduce function to ensure correct type inference.
+    return currentExpenses.reduce((acc: Record<string, number>, expense) => {
         acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
         return acc;
     }, {});
@@ -49,7 +48,6 @@ const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount,
   };
 
   const handleCheck = () => {
-    // FIX: Corrected typo in function name from parseFromcurrency to parseFromCurrency.
     const purchaseAmount = parseFromCurrency(amount);
     if (!name || purchaseAmount <= 0 || category === Category.UNCATEGORIZED) {
         setResult({status: 'no', message: "Por favor, preencha todos os campos com valores válidos."});
@@ -125,7 +123,6 @@ const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount,
               />
             </div>
              <div>
-                {/* FIX: Corrected typo in closing tag from glabel to label */}
                 <label htmlFor="purchase-category" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Categoria</label>
                 <select
                 id="purchase-category"
@@ -133,7 +130,8 @@ const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount,
                 onChange={(e) => setCategory(e.target.value as Category)}
                 className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white"
                 >
-                {Object.entries(categoryConfig).map(([key, value]) => (
+                {/* FIX: Cast the result of Object.entries to ensure `value` is correctly typed as CategoryInfo. */}
+                {(Object.entries(categoryConfig) as [Category, CategoryInfo][]).map(([key, value]) => (
                   <option key={key} value={key}>{value.name}</option>
                 ))}
               </select>

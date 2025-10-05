@@ -40,7 +40,9 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
   const [installmentsTotal, setInstallmentsTotal] = useState('1');
   const [isRecurring, setIsRecurring] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [isThirdParty, setIsThirdParty] = useState(false);
+  const [payerName, setPayerName] = useState('');
+
   const isEditing = !!expenseToEdit;
 
   useEffect(() => {
@@ -51,6 +53,13 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
       setDueDate(expenseToEdit.dueDate);
       setInstallmentsTotal(expenseToEdit.installments?.total.toString() || '1');
       setIsRecurring(expenseToEdit.recurrence === 'monthly');
+      if (expenseToEdit.payer) {
+        setIsThirdParty(true);
+        setPayerName(expenseToEdit.payer);
+      } else {
+        setIsThirdParty(false);
+        setPayerName('');
+      }
     }
   }, [expenseToEdit]);
 
@@ -61,11 +70,21 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
   };
 
   const handleDescriptionBlur = useCallback(() => {
-    if (name.trim().length > 3 && !isEditing) { // Only suggest for new expenses
+    // Não sugere categoria se for despesa de terceiro ou se já estiver editando
+    if (name.trim().length > 3 && !isEditing && !isThirdParty) {
       const suggested = suggestCategoryLocal(name);
       setCategory(suggested);
     }
-  }, [name, isEditing]);
+  }, [name, isEditing, isThirdParty]);
+
+  const handleThirdPartyToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setIsThirdParty(checked);
+    if (checked) {
+      // Se for de terceiro, a categoria não é relevante para o usuário
+      setCategory(Category.UNCATEGORIZED);
+    }
+  };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +92,11 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
     if (!name || numericAmount <= 0 || !dueDate) {
       alert('Por favor, preencha todos os campos obrigatórios com valores válidos.');
       return;
+    }
+
+    if (isThirdParty && !payerName.trim()) {
+        alert('Por favor, informe o nome do responsável pelo pagamento.');
+        return;
     }
 
     setIsSubmitting(true);
@@ -85,6 +109,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
         category,
         dueDate,
         recurrence: isRecurring ? 'monthly' : undefined,
+        payer: isThirdParty ? payerName.trim() : undefined,
       };
       onSaveEdit(updatedExpense);
     } else {
@@ -94,6 +119,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
         category,
         dueDate,
         recurrence: isRecurring ? 'monthly' : undefined,
+        payer: isThirdParty ? payerName.trim() : undefined,
       };
       const totalInstallments = parseInt(installmentsTotal, 10);
       if (totalInstallments > 1) {
@@ -157,20 +183,22 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Categoria</label>
-              <select
-                id="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value as Category)}
-                className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white"
-              >
-                {Object.entries(CATEGORIES).map(([key, value]) => (
-                  <option key={key} value={key}>{value.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
+            {!isThirdParty && (
+              <div>
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Categoria</label>
+                <select
+                  id="category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as Category)}
+                  className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white"
+                >
+                  {Object.entries(CATEGORIES).map(([key, value]) => (
+                    <option key={key} value={key}>{value.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className={isThirdParty ? 'md:col-span-2' : ''}>
                 <label htmlFor="installments" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nº de Parcelas</label>
                 <input
                 type="number"
@@ -183,17 +211,45 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
                 />
             </div>
           </div>
-          <div className="flex items-center">
-            <input
-              id="recurring"
-              type="checkbox"
-              checked={isRecurring}
-              onChange={(e) => setIsRecurring(e.target.checked)}
-              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-            />
-            <label htmlFor="recurring" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-              Gasto Mensal Recorrente
-            </label>
+          <div className="space-y-4">
+            <div className="flex items-center">
+                <input
+                id="thirdParty"
+                type="checkbox"
+                checked={isThirdParty}
+                onChange={handleThirdPartyToggle}
+                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                />
+                <label htmlFor="thirdParty" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                Esta despesa é de um terceiro (não afeta seu orçamento)
+                </label>
+            </div>
+            {isThirdParty && (
+                 <div>
+                    <label htmlFor="payerName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Responsável pelo pagamento</label>
+                    <input
+                    type="text"
+                    id="payerName"
+                    value={payerName}
+                    onChange={(e) => setPayerName(e.target.value)}
+                    className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white"
+                    placeholder="Ex: Pai, Namorado, etc."
+                    required={isThirdParty}
+                    />
+                </div>
+            )}
+            <div className="flex items-center">
+                <input
+                id="recurring"
+                type="checkbox"
+                checked={isRecurring}
+                onChange={(e) => setIsRecurring(e.target.checked)}
+                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                />
+                <label htmlFor="recurring" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                Gasto Mensal Recorrente
+                </label>
+            </div>
           </div>
           <div className="pt-4 flex justify-end gap-3">
             <button

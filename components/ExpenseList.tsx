@@ -48,8 +48,6 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, onEdit, onDelete })
                                 </span>
                             )}
                             {expense.recurrence === 'monthly' && (
-                                // FIX: The `title` prop is not supported on lucide-react icons.
-                                // Wrap the icon in a `span` with a `title` attribute to show a tooltip.
                                 <span title="Despesa Recorrente">
                                     <Repeat size={14} className="inline ml-2 text-blue-500" />
                                 </span>
@@ -86,7 +84,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, onEdit, onDelete })
         ) : (
           <div className="text-center py-10">
             <p className="text-gray-500 dark:text-gray-400">Nenhuma despesa registrada para este mês.</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Clique em "Nova Despesa" para começar a adicionar.</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Clique em "Adicionar Despesa" para começar.</p>
           </div>
         )}
       </div>
