@@ -38,16 +38,40 @@ const convertSvgToPng = (svgDataUrl: string, width: number, height: number): Pro
 export const generatePDF = async (totalAmount: number, expenses: Expense[]) => {
   const { jsPDF } = jspdf;
   const doc = new jsPDF();
-
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+  
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
   const nextMonth = (currentMonth + 1) % 12;
   const nextMonthYear = nextMonth === 0 ? currentYear + 1 : currentYear;
 
-  const currentMonthExpenses = expenses.filter(expense => {
-    const expenseDate = new Date(expense.dueDate);
-    return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
+  const endOfCurrentMonth = new Date(currentYear, currentMonth + 1, 0);
+  const currentMonthExpenses: Expense[] = [];
+
+  expenses.forEach(expense => {
+    const expenseStartDate = new Date(expense.dueDate);
+    expenseStartDate.setUTCHours(0, 0, 0, 0);
+
+    if (expense.recurrence === 'monthly') {
+      if (expenseStartDate <= endOfCurrentMonth) {
+        const recurringInstance = { ...expense };
+        const newDate = new Date(expense.dueDate);
+        newDate.setFullYear(currentYear);
+        newDate.setMonth(currentMonth);
+        if (newDate.getMonth() !== currentMonth) {
+          newDate.setDate(0);
+        }
+        recurringInstance.dueDate = newDate.toISOString().split('T')[0];
+        currentMonthExpenses.push(recurringInstance);
+      }
+    } else {
+      const expenseDate = new Date(expense.dueDate);
+      if (expenseDate.getUTCFullYear() === currentYear && expenseDate.getUTCMonth() === currentMonth) {
+        currentMonthExpenses.push(expense);
+      }
+    }
   });
+
 
   const totalExpenses = currentMonthExpenses.reduce((acc, expense) => acc + expense.amount, 0);
   const balance = totalAmount - totalExpenses;
@@ -107,30 +131,45 @@ export const generatePDF = async (totalAmount: number, expenses: Expense[]) => {
   // --- Future Payments ---
   const futurePayments = expenses.filter(expense => {
     const expenseDate = new Date(expense.dueDate);
-    const isFutureInstallment = expense.installments && (expenseDate.getMonth() > currentMonth || expenseDate.getFullYear() > currentYear);
-    const isRecurringForNextMonth = expense.recurrence === 'monthly';
-    return isFutureInstallment || isRecurringForNextMonth;
+    return expenseDate > endOfCurrentMonth;
   });
   
   const nextMonthPayments = futurePayments.map(e => {
      let name = e.name;
      if (e.installments) {
-         name += ` (${e.installments.current}/${e.installments.total})`;
+         name = e.name; // Keep original name for installments
      }
      const dueDate = new Date(e.dueDate);
+     
+     // Handle recurring for next month projection
      if (e.recurrence === 'monthly') {
-         dueDate.setMonth(nextMonth);
-         dueDate.setFullYear(nextMonthYear);
+         const recurringDate = new Date(e.dueDate);
+         recurringDate.setFullYear(nextMonthYear);
+         recurringDate.setMonth(nextMonth);
+         if (recurringDate.getMonth() !== nextMonth) {
+             recurringDate.setDate(0);
+         }
+         return { ...e, name, dueDate: recurringDate.toISOString().split('T')[0] };
      }
-     return { ...e, name, dueDate: dueDate.toISOString().split('T')[0] };
+     
+     return { ...e, name, dueDate: e.dueDate };
   }).filter(e => {
     const d = new Date(e.dueDate);
-    return d.getMonth() === nextMonth && d.getFullYear() === nextMonthYear;
+    const expenseMonth = d.getUTCMonth();
+    const expenseYear = d.getUTCFullYear();
+    
+    if (e.recurrence === 'monthly') {
+        return expenseMonth === nextMonth && expenseYear === nextMonthYear;
+    }
+    // For installments, just check if it's in the next calendar month
+    return expenseMonth === nextMonth && expenseYear === nextMonthYear;
   });
 
   if(nextMonthPayments.length > 0) {
-    doc.addPage();
-    y = 20;
+    if (y > 200) { // Check if there's enough space, otherwise add new page
+        doc.addPage();
+        y = 20;
+    }
     doc.setFontSize(16);
     doc.text('Pagamentos Programados para o Próximo Mês', 14, y);
     y += 8;
@@ -138,7 +177,7 @@ export const generatePDF = async (totalAmount: number, expenses: Expense[]) => {
       startY: y,
       head: [['Descrição', 'Vencimento Previsto', 'Valor']],
       body: nextMonthPayments.map(e => [
-        e.name,
+        e.name + (e.installments ? ` (${e.installments.current}/${e.installments.total})` : ''),
         formatDate(e.dueDate),
         { content: formatCurrency(e.amount), styles: { halign: 'right' } }
       ]),

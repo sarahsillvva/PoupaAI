@@ -40,29 +40,116 @@ export const updateTotalAmount = async (amount: number): Promise<{ totalAmount: 
 
 export const addExpense = async (expenseData: NewExpenseData): Promise<Expense[]> => {
   const data = getStoredData();
-  const newExpense: Expense = {
-    ...expenseData,
-    id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-  };
-  data.expenses.push(newExpense);
+  const totalInstallments = expenseData.installments?.total ?? 1;
+
+  if (totalInstallments > 1) {
+    const groupId = `${Date.now()}-group-${Math.random().toString(36).substr(2, 9)}`;
+    const originalDate = new Date(expenseData.dueDate);
+    for (let i = 1; i <= totalInstallments; i++) {
+      const installmentDate = new Date(originalDate.getUTCFullYear(), originalDate.getUTCMonth() + i - 1, originalDate.getUTCDate());
+      
+      if (installmentDate.getUTCDate() !== originalDate.getUTCDate()) {
+        installmentDate.setDate(0);
+      }
+
+      const newExpense: Expense = {
+        ...expenseData,
+        id: `${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`,
+        groupId,
+        dueDate: installmentDate.toISOString().split('T')[0],
+        installments: {
+          current: i,
+          total: totalInstallments,
+        },
+        recurrence: undefined,
+      };
+      data.expenses.push(newExpense);
+    }
+  } else {
+    const newExpense: Expense = {
+      ...expenseData,
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    };
+    data.expenses.push(newExpense);
+  }
+
   setStoredData(data);
   return Promise.resolve(data.expenses);
 };
 
-export const updateExpense = async (expense: Expense): Promise<Expense> => {
+
+export const updateExpense = async (updatedExpense: Expense): Promise<Expense[]> => {
   const data = getStoredData();
-  const index = data.expenses.findIndex(e => e.id === expense.id);
-  if (index > -1) {
-    data.expenses[index] = expense;
-    setStoredData(data);
-    return Promise.resolve(expense);
+  const originalExpense = data.expenses.find(e => e.id === updatedExpense.id);
+  
+  if (!originalExpense) {
+    return Promise.reject(new Error('Despesa não encontrada para atualização.'));
   }
-  return Promise.reject(new Error('Despesa não encontrada para atualização.'));
+  
+  const originalGroupId = originalExpense.groupId;
+  
+  // Delete old entries (the entire group if it was an installment, or the single expense)
+  if (originalGroupId) {
+    data.expenses = data.expenses.filter(e => e.groupId !== originalGroupId);
+  } else {
+    data.expenses = data.expenses.filter(e => e.id !== originalExpense.id);
+  }
+  
+  // Re-add the expense(s) based on the updated data.
+  const totalInstallments = updatedExpense.installments?.total ?? 1;
+
+  if (totalInstallments > 1) {
+    const groupId = originalGroupId || `${Date.now()}-group-${Math.random().toString(36).substr(2, 9)}`;
+    const baseDate = new Date(updatedExpense.dueDate);
+
+    for (let i = 1; i <= totalInstallments; i++) {
+      const installmentDate = new Date(baseDate.getUTCFullYear(), baseDate.getUTCMonth() + i - 1, baseDate.getUTCDate());
+      if (installmentDate.getUTCDate() !== baseDate.getUTCDate()) {
+        installmentDate.setDate(0);
+      }
+
+      const newInstallment: Expense = {
+        name: updatedExpense.name,
+        amount: updatedExpense.amount,
+        category: updatedExpense.category,
+        payer: updatedExpense.payer,
+        id: `${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`,
+        groupId: groupId,
+        dueDate: installmentDate.toISOString().split('T')[0],
+        installments: {
+          current: i,
+          total: totalInstallments,
+        },
+      };
+      data.expenses.push(newInstallment);
+    }
+  } else {
+    // It's a single expense now
+    const newSingleExpense: Expense = {
+      ...updatedExpense,
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Give it a new ID
+      installments: undefined,
+      groupId: undefined,
+    };
+    data.expenses.push(newSingleExpense);
+  }
+  
+  setStoredData(data);
+  return Promise.resolve(data.expenses);
 };
 
 export const deleteExpense = async (id: string): Promise<void> => {
   const data = getStoredData();
-  data.expenses = data.expenses.filter(e => e.id !== id);
+  const expenseToDelete = data.expenses.find(e => e.id === id);
+
+  if (!expenseToDelete) return Promise.resolve();
+
+  if (expenseToDelete.groupId) {
+    data.expenses = data.expenses.filter(e => e.groupId !== expenseToDelete.groupId);
+  } else {
+    data.expenses = data.expenses.filter(e => e.id !== id);
+  }
+
   setStoredData(data);
   return Promise.resolve();
 };

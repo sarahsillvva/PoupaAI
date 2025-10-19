@@ -34,11 +34,11 @@ const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ onClose, totalAmount,
   const [result, setResult] = useState<Result>({status: 'none', message: ''});
 
   const categorySpending = useMemo(() => {
-    // FIX: Explicitly type the accumulator in the reduce function to ensure correct type inference.
-    return currentExpenses.reduce((acc: Record<string, number>, expense) => {
+    // FIX: Explicitly type the initial value of the reduce function's accumulator to ensure correct type inference.
+    return currentExpenses.reduce((acc, expense) => {
         acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
         return acc;
-    }, {});
+    }, {} as Record<Category, number>);
   }, [currentExpenses]);
   
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {

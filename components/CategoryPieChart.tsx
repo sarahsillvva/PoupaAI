@@ -12,10 +12,10 @@ interface CategoryPieChartProps {
 const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ expenses, totalIncome }) => {
   const data = useMemo(() => {
     // FIX: Explicitly type the accumulator in the reduce function to ensure correct type inference for categoryTotals.
-    const categoryTotals = expenses.reduce((acc: Record<string, number>, expense) => {
+    const categoryTotals = expenses.reduce((acc: Record<Category, number>, expense) => {
       acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
       return acc;
-    }, {});
+    }, {} as Record<Category, number>);
 
     return Object.entries(categoryTotals)
       .map(([category, amount]) => ({

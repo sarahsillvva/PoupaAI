@@ -10,6 +10,7 @@ export enum Category {
 
 export interface Expense {
   id: string;
+  groupId?: string;
   name: string;
   amount: number;
   category: Category;

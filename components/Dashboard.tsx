@@ -10,6 +10,7 @@ import PurchaseAdvisor from './PurchaseAdvisor';
 import WarningModal from './WarningModal';
 import BudgetConfigModal from './BudgetConfigModal';
 import ThirdPartyExpensesList from './ThirdPartyExpensesList';
+import MonthNavigator from './MonthNavigator';
 import { Expense, Category, CategoryInfo } from '../types';
 import * as api from '../services/apiService';
 import { generatePDF } from '../utils/pdfGenerator';
@@ -32,9 +33,9 @@ const Dashboard: React.FC = () => {
 
   const [categoryConfig, setCategoryConfig] = useState<Record<Category, CategoryInfo> | null>(null);
   const [isBudgetConfigOpen, setIsBudgetConfigOpen] = useState(false);
+  
+  const [viewDate, setViewDate] = useState(new Date());
 
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
 
   const mergeConfig = (customTargets: api.CategoryTargets) => {
       const newConfig = JSON.parse(JSON.stringify(CATEGORIES)); // Deep copy defaults
@@ -78,14 +79,42 @@ const Dashboard: React.FC = () => {
   }, [isLoading]);
   
   const { personalExpenses, thirdPartyExpenses, totalExpenses, balance } = useMemo(() => {
-    const monthExpenses = expenses.filter(expense => {
-      const expenseDate = new Date(expense.dueDate);
-      return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
+    const viewMonth = viewDate.getMonth();
+    const viewYear = viewDate.getFullYear();
+    const endOfViewMonth = new Date(viewYear, viewMonth + 1, 0);
+
+    const displayedExpenses: Expense[] = [];
+
+    expenses.forEach(expense => {
+      const expenseStartDate = new Date(expense.dueDate);
+      expenseStartDate.setUTCHours(0, 0, 0, 0);
+
+      if (expense.recurrence === 'monthly') {
+        if (expenseStartDate <= endOfViewMonth) {
+          const recurringInstance = { ...expense };
+          const newDate = new Date(expense.dueDate);
+          
+          newDate.setFullYear(viewYear);
+          newDate.setMonth(viewMonth);
+          
+          if (newDate.getMonth() !== viewMonth) {
+              newDate.setDate(0);
+          }
+          
+          recurringInstance.dueDate = newDate.toISOString().split('T')[0];
+          recurringInstance.id = `${expense.id}-recurring-${viewYear}-${viewMonth}`;
+          displayedExpenses.push(recurringInstance);
+        }
+      } else {
+        const expenseDate = new Date(expense.dueDate);
+        if (expenseDate.getUTCFullYear() === viewYear && expenseDate.getUTCMonth() === viewMonth) {
+          displayedExpenses.push(expense);
+        }
+      }
     });
 
-    const personal = monthExpenses.filter(e => !e.payer);
-    const thirdParty = monthExpenses.filter(e => !!e.payer);
-    
+    const personal = displayedExpenses.filter(e => !e.payer);
+    const thirdParty = displayedExpenses.filter(e => !!e.payer);
     const total = personal.reduce((acc, expense) => acc + expense.amount, 0);
     
     return {
@@ -94,7 +123,7 @@ const Dashboard: React.FC = () => {
       totalExpenses: total,
       balance: totalIncome - total,
     };
-  }, [expenses, totalIncome, currentMonth, currentYear]);
+  }, [expenses, totalIncome, viewDate]);
 
 
   // Event listeners for header buttons
@@ -108,7 +137,7 @@ const Dashboard: React.FC = () => {
         // @ts-ignore
         if (typeof jspdf !== 'undefined') {
             try {
-                await generatePDF(totalIncome, personalExpenses);
+                await generatePDF(totalIncome, expenses); // Pass all expenses
             } catch (pdfError) {
                 console.error("Failed to generate PDF:", pdfError);
                 alert("Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.");
@@ -128,7 +157,7 @@ const Dashboard: React.FC = () => {
       window.removeEventListener('open-purchase-advisor', handleOpenPurchaseAdvisor);
       window.removeEventListener('generate-pdf', handleGeneratePDF);
     };
-  }, [totalIncome, personalExpenses]);
+  }, [totalIncome, expenses]);
 
   const handleSaveExpense = async (expenseData: Omit<Expense, 'id'>) => {
     try {
@@ -142,8 +171,8 @@ const Dashboard: React.FC = () => {
 
   const handleUpdateExpense = async (expense: Expense) => {
     try {
-      await api.updateExpense(expense);
-      await fetchData(); // Refetch all data to ensure consistency
+      const newExpenses = await api.updateExpense(expense);
+      setExpenses(newExpenses);
       setIsExpenseFormOpen(false);
       setExpenseToEdit(null);
     } catch (err) {
@@ -152,6 +181,31 @@ const Dashboard: React.FC = () => {
   };
 
   const handleEditExpense = (expense: Expense) => {
+    // If it's a recurring expense, find the original template
+    if (expense.id.includes('-recurring-')) {
+        const originalId = expense.id.split('-recurring-')[0];
+        const originalExpense = expenses.find(e => e.id === originalId);
+        if (originalExpense) {
+            setExpenseToEdit(originalExpense);
+            setIsExpenseFormOpen(true);
+        }
+        return;
+    }
+
+    // If it's an installment, find the first one in the group to get start date
+    if (expense.groupId) {
+        const firstInstallment = expenses
+            .filter(e => e.groupId === expense.groupId)
+            .sort((a, b) => (a.installments?.current ?? 0) - (b.installments?.current ?? 0))[0];
+        
+        if (firstInstallment) {
+            setExpenseToEdit(firstInstallment);
+            setIsExpenseFormOpen(true);
+        }
+        return;
+    }
+
+    // It's a regular, single expense
     setExpenseToEdit(expense);
     setIsExpenseFormOpen(true);
   };
@@ -203,6 +257,15 @@ const Dashboard: React.FC = () => {
           setError('Falha ao redefinir as metas.');
       }
   };
+  
+  const handlePreviousMonth = () => {
+      setViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 15));
+  };
+
+  const handleNextMonth = () => {
+      setViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 15));
+  };
+
 
   if (isLoading || !categoryConfig) {
     return <div className="flex justify-center items-center h-screen"><div className="text-xl text-gray-500 dark:text-gray-400">Carregando dados...</div></div>;
@@ -214,6 +277,11 @@ const Dashboard: React.FC = () => {
 
   return (
     <main className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      <MonthNavigator 
+        viewDate={viewDate}
+        onPreviousMonth={handlePreviousMonth}
+        onNextMonth={handleNextMonth}
+      />
       <Summary
         totalIncome={totalIncome}
         totalExpenses={totalExpenses}
@@ -276,6 +344,8 @@ const Dashboard: React.FC = () => {
           title="Confirmar Exclusão"
         >
           <p>Você tem certeza que deseja excluir a despesa "{expenseToDelete.name}"?</p>
+          {expenseToDelete.recurrence === 'monthly' && <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">Atenção: Esta é uma despesa recorrente. A exclusão removerá todas as futuras ocorrências.</p>}
+          {(expenseToDelete.installments || expenseToDelete.groupId) && <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">Atenção: Esta despesa faz parte de um parcelamento. A exclusão removerá <strong>todas</strong> as parcelas relacionadas a esta compra.</p>}
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Esta ação não pode ser desfeita.</p>
         </WarningModal>
       )}

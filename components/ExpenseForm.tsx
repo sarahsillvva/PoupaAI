@@ -44,6 +44,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
   const [payerName, setPayerName] = useState('');
 
   const isEditing = !!expenseToEdit;
+  const totalInstallmentsNum = parseInt(installmentsTotal, 10) || 1;
 
   useEffect(() => {
     if (expenseToEdit) {
@@ -108,8 +109,12 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
         amount: numericAmount,
         category,
         dueDate,
-        recurrence: isRecurring ? 'monthly' : undefined,
+        recurrence: isRecurring && totalInstallmentsNum <= 1 ? 'monthly' : undefined,
         payer: isThirdParty ? payerName.trim() : undefined,
+        installments: totalInstallmentsNum > 1 ? {
+          current: 1, // Placeholder, backend will handle it
+          total: totalInstallmentsNum
+        } : undefined,
       };
       onSaveEdit(updatedExpense);
     } else {
@@ -118,14 +123,13 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
         amount: numericAmount,
         category,
         dueDate,
-        recurrence: isRecurring ? 'monthly' : undefined,
+        recurrence: isRecurring && totalInstallmentsNum <= 1 ? 'monthly' : undefined,
         payer: isThirdParty ? payerName.trim() : undefined,
       };
-      const totalInstallments = parseInt(installmentsTotal, 10);
-      if (totalInstallments > 1) {
+      if (totalInstallmentsNum > 1) {
         expenseData.installments = {
-          current: 1,
-          total: totalInstallments
+          current: 1, // This is a placeholder, backend will set the correct current installment
+          total: totalInstallmentsNum
         };
       }
       onSaveAdd(expenseData);
@@ -171,7 +175,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
               />
             </div>
              <div>
-                <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Vencimento</label>
+                <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Vencimento {totalInstallmentsNum > 1 ? '(1ª Parcela)' : ''}</label>
                 <input
                 type="date"
                 id="dueDate"
@@ -205,9 +209,9 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
                 id="installments"
                 value={installmentsTotal}
                 onChange={(e) => setInstallmentsTotal(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white"
+                className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white disabled:bg-gray-200 dark:disabled:bg-gray-600"
                 min="1"
-                disabled={isEditing}
+                disabled={isRecurring}
                 />
             </div>
           </div>
@@ -244,7 +248,8 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
                 type="checkbox"
                 checked={isRecurring}
                 onChange={(e) => setIsRecurring(e.target.checked)}
-                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 disabled:opacity-50"
+                disabled={totalInstallmentsNum > 1}
                 />
                 <label htmlFor="recurring" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
                 Gasto Mensal Recorrente

@@ -16,11 +16,11 @@ const Suggestions: React.FC<SuggestionsProps> = ({ expenses, totalIncome, catego
         return ["Defina seu valor disponível para receber sugestões."];
     }
     
-    // FIX: Explicitly type the accumulator in the reduce function to ensure correct type inference for categoryTotals.
-    const categoryTotals = expenses.reduce((acc: Record<string, number>, expense) => {
+    // FIX: Explicitly type the initial value of the reduce function's accumulator to ensure correct type inference for categoryTotals.
+    const categoryTotals = expenses.reduce((acc, expense) => {
       acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
       return acc;
-    }, {});
+    }, {} as Record<Category, number>);
 
     const newSuggestions: string[] = [];
 

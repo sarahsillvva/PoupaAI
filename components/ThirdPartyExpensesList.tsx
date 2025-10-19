@@ -13,6 +13,7 @@ interface ThirdPartyExpensesListProps {
 const ThirdPartyExpensesList: React.FC<ThirdPartyExpensesListProps> = ({ expenses, onEdit, onDelete }) => {
   const groupedExpenses = useMemo(() => {
     type GroupedData = Record<string, { expenses: Expense[], total: number }>;
+    // FIX: Explicitly type the accumulator in the reduce function to prevent its values from being inferred as 'unknown'.
     return expenses.reduce((acc: GroupedData, expense) => {
       const payer = expense.payer || 'Desconhecido';
       if (!acc[payer]) {
@@ -21,7 +22,7 @@ const ThirdPartyExpensesList: React.FC<ThirdPartyExpensesListProps> = ({ expense
       acc[payer].expenses.push(expense);
       acc[payer].total += expense.amount;
       return acc;
-    }, {});
+    }, {} as GroupedData);
   }, [expenses]);
 
   const sortedPayers = Object.entries(groupedExpenses).sort((a, b) => a[0].localeCompare(b[0]));
