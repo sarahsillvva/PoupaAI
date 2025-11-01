@@ -42,6 +42,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isThirdParty, setIsThirdParty] = useState(false);
   const [payerName, setPayerName] = useState('');
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
 
   const isEditing = !!expenseToEdit;
   const totalInstallmentsNum = parseInt(installmentsTotal, 10) || 1;
@@ -149,20 +150,20 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição</label>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição <span className="text-red-500">*</span></label>
             <input
               type="text"
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               onBlur={handleDescriptionBlur}
-              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white"
+              className={`mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white ${errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
               required
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Valor</label>
+              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Valor <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 inputMode="decimal"
@@ -170,18 +171,18 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
                 value={amount}
                 onChange={handleAmountChange}
                 placeholder="R$ 0,00"
-                className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white"
+                className={`mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white ${errors.amount ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 required
               />
             </div>
              <div>
-                <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Vencimento {totalInstallmentsNum > 1 ? '(1ª Parcela)' : ''}</label>
+                <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Vencimento {totalInstallmentsNum > 1 ? '(1ª Parcela)' : ''} <span className="text-red-500">*</span></label>
                 <input
                 type="date"
                 id="dueDate"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white"
+                className={`mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white ${errors.dueDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 required
                 />
             </div>
@@ -230,13 +231,13 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
             </div>
             {isThirdParty && (
                  <div>
-                    <label htmlFor="payerName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Responsável pelo pagamento</label>
+                    <label htmlFor="payerName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Responsável pelo pagamento <span className="text-red-500">*</span></label>
                     <input
                     type="text"
                     id="payerName"
                     value={payerName}
                     onChange={(e) => setPayerName(e.target.value)}
-                    className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white"
+                    className={`mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white ${errors.payerName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                     placeholder="Ex: Pai, Namorado, etc."
                     required={isThirdParty}
                     />

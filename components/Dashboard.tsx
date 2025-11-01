@@ -11,6 +11,7 @@ import WarningModal from './WarningModal';
 import BudgetConfigModal from './BudgetConfigModal';
 import ThirdPartyExpensesList from './ThirdPartyExpensesList';
 import MonthNavigator from './MonthNavigator';
+import FeedbackModal from './FeedbackModal';
 import { Expense, Category, CategoryInfo } from '../types';
 import * as api from '../services/apiService';
 import { generatePDF } from '../utils/pdfGenerator';
@@ -33,6 +34,7 @@ const Dashboard: React.FC = () => {
 
   const [categoryConfig, setCategoryConfig] = useState<Record<Category, CategoryInfo> | null>(null);
   const [isBudgetConfigOpen, setIsBudgetConfigOpen] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   
   const [viewDate, setViewDate] = useState(new Date());
 
@@ -91,6 +93,10 @@ const Dashboard: React.FC = () => {
 
       if (expense.recurrence === 'monthly') {
         if (expenseStartDate <= endOfViewMonth) {
+          if (expense.recurrenceEndDate) {
+            const recurrenceEndDate = new Date(expense.recurrenceEndDate);
+            if (viewDate > recurrenceEndDate) return; 
+          }
           const recurringInstance = { ...expense };
           const newDate = new Date(expense.dueDate);
           
@@ -103,6 +109,7 @@ const Dashboard: React.FC = () => {
           
           recurringInstance.dueDate = newDate.toISOString().split('T')[0];
           recurringInstance.id = `${expense.id}-recurring-${viewYear}-${viewMonth}`;
+          recurringInstance.originalId = expense.id; // Mantém o ID original
           displayedExpenses.push(recurringInstance);
         }
       } else {
@@ -148,14 +155,18 @@ const Dashboard: React.FC = () => {
         }
     };
 
+    const handleOpenFeedbackModal = () => setIsFeedbackModalOpen(true);
+
     window.addEventListener('add-expense', handleAddExpense);
     window.addEventListener('open-purchase-advisor', handleOpenPurchaseAdvisor);
     window.addEventListener('generate-pdf', handleGeneratePDF);
+    window.addEventListener('open-feedback-modal', handleOpenFeedbackModal);
 
     return () => {
       window.removeEventListener('add-expense', handleAddExpense);
       window.removeEventListener('open-purchase-advisor', handleOpenPurchaseAdvisor);
       window.removeEventListener('generate-pdf', handleGeneratePDF);
+      window.removeEventListener('open-feedback-modal', handleOpenFeedbackModal);
     };
   }, [totalIncome, expenses]);
 
@@ -218,7 +229,24 @@ const Dashboard: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (!expenseToDelete) return;
     try {
-      await api.deleteExpense(expenseToDelete.id);
+      // Se for uma despesa recorrente, define uma data de término em vez de excluir
+      if (expenseToDelete.recurrence === 'monthly' && expenseToDelete.originalId) {
+        const originalExpense = expenses.find(e => e.id === expenseToDelete.originalId);
+        if (originalExpense) {
+          const deletionDate = new Date(expenseToDelete.dueDate);
+          // Define o fim da recorrência para o último dia do mês ANTERIOR à exclusão.
+          const recurrenceEndDate = new Date(deletionDate.getFullYear(), deletionDate.getMonth(), 0);
+          
+          const updatedExpense = {
+            ...originalExpense,
+            recurrenceEndDate: recurrenceEndDate.toISOString().split('T')[0],
+          };
+          await api.updateExpense(updatedExpense);
+        }
+      } else {
+        // Lógica de exclusão padrão para despesas normais e parceladas
+        await api.deleteExpense(expenseToDelete.originalId ?? expenseToDelete.id);
+      }
       await fetchData(); // Refetch
       setIsWarningModalOpen(false);
       setExpenseToDelete(null);
@@ -344,7 +372,7 @@ const Dashboard: React.FC = () => {
           title="Confirmar Exclusão"
         >
           <p>Você tem certeza que deseja excluir a despesa "{expenseToDelete.name}"?</p>
-          {expenseToDelete.recurrence === 'monthly' && <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">Atenção: Esta é uma despesa recorrente. A exclusão removerá todas as futuras ocorrências.</p>}
+          {expenseToDelete.recurrence === 'monthly' && <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">Atenção: Esta é uma despesa recorrente. A exclusão irá <strong>encerrar</strong> a recorrência a partir deste mês, mas o histórico será mantido.</p>}
           {(expenseToDelete.installments || expenseToDelete.groupId) && <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">Atenção: Esta despesa faz parte de um parcelamento. A exclusão removerá <strong>todas</strong> as parcelas relacionadas a esta compra.</p>}
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Esta ação não pode ser desfeita.</p>
         </WarningModal>
@@ -356,6 +384,12 @@ const Dashboard: React.FC = () => {
             onSave={handleSaveCategoryConfig}
             onReset={handleResetCategoryConfig}
             currentConfig={categoryConfig}
+        />
+      )}
+      {isFeedbackModalOpen && (
+        <FeedbackModal
+            isOpen={isFeedbackModalOpen}
+            onClose={() => setIsFeedbackModalOpen(false)}
         />
       )}
     </main>

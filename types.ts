@@ -20,6 +20,8 @@ export interface Expense {
     total: number;
   };
   recurrence?: 'monthly';
+  recurrenceEndDate?: string; 
+
   payer?: string;
 }
 
