@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { KeyRound, UserRound, X } from 'lucide-react';
+import { CheckCircle2, KeyRound, UserRound, X } from 'lucide-react';
 import type { User } from 'firebase/auth';
 import { requestPasswordReset, updateNickname } from '../services/authService';
 
@@ -23,7 +23,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, user, nickname, onC
       setMessage(null);
       setError(null);
     }
-  }, [isOpen, nickname]);
+  }, [isOpen]);
 
   if (!isOpen || !user) return null;
   const usesPassword = user.providerData.some(provider => provider.providerId === 'password');
@@ -61,7 +61,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, user, nickname, onC
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-labelledby="profile-title">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl dark:bg-gray-800 sm:p-6">
         <div className="flex items-center justify-between">
           <h2 id="profile-title" className="text-xl font-bold text-gray-900 dark:text-white">Meu perfil</h2>
           <button type="button" onClick={onClose} className="rounded-full p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Fechar"><X size={20} /></button>
@@ -72,12 +72,20 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, user, nickname, onC
             Apelido
             <div className="relative mt-1">
               <UserRound size={17} className="absolute left-3 top-3 text-gray-400" />
-              <input value={value} onChange={event => setValue(event.target.value)} minLength={2} maxLength={30} required className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+              <input value={value} onChange={event => setValue(event.target.value)} minLength={2} maxLength={30} required className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-base text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
             </div>
           </label>
           <p className="text-xs text-gray-500 dark:text-gray-400">Este é o nome que aparecerá no cabeçalho.</p>
           <button type="submit" disabled={isSaving || value.trim() === nickname} className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">Salvar apelido</button>
         </form>
+
+        {message && (
+          <div role="status" aria-live="polite" className="mt-4 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-700 dark:border-green-900 dark:bg-green-950/30 dark:text-green-300">
+            <CheckCircle2 size={19} className="flex-none" />
+            <span>{message}</span>
+          </div>
+        )}
+        {error && <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-300">{error}</p>}
 
         <div className="mt-6 border-t border-gray-200 pt-5 dark:border-gray-700">
           <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white"><KeyRound size={18} /> Senha</h3>
@@ -87,8 +95,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, user, nickname, onC
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Sua entrada é feita pelo Google. A senha é administrada na sua Conta Google.</p>
           )}
         </div>
-        {message && <p className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950/30 dark:text-green-300">{message}</p>}
-        {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-300">{error}</p>}
       </div>
     </div>
   );
