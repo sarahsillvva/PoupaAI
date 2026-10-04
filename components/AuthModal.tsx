@@ -165,7 +165,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, initialMode = 'login', on
           <div className="flex items-center gap-3">
             <LockKeyhole className="text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
             <h2 id="auth-title" className="text-xl font-bold text-gray-900 dark:text-white">
-              {mode === 'signup' ? 'Criar conta grátis' : 'Entrar no Poupa Aí'}
+              {mode === 'signup' ? 'Criar conta grátis' : 'Entrar'}
             </h2>
           </div>
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" aria-label="Fechar">

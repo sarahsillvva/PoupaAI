@@ -110,7 +110,7 @@ function App() {
   useEffect(() => {
     if (!isAuthReady || !isDataReady) return;
 
-    if (!user && !sessionStorage.getItem(ACCOUNT_PROMPT_SESSION_KEY)) {
+    if (!user && !auth.currentUser && !isAuthModalOpen && !sessionStorage.getItem(ACCOUNT_PROMPT_SESSION_KEY)) {
       setIsAccountPromptOpen(true);
       return;
     }
@@ -119,7 +119,7 @@ function App() {
       const timeout = window.setTimeout(() => setIsTourOpen(true), 500);
       return () => window.clearTimeout(timeout);
     }
-  }, [isAuthReady, isDataReady, user]);
+  }, [isAuthReady, isDataReady, user, isAuthModalOpen]);
 
   const openAuth = (mode: AuthMode) => {
     setAuthMode(mode);
@@ -169,6 +169,7 @@ function App() {
       {isAccountPromptOpen && (
         <AccountPromptModal
           onCreateAccount={() => openAuth('signup')}
+          onLogin={() => openAuth('login')}
           onDismiss={dismissAccountPrompt}
         />
       )}
