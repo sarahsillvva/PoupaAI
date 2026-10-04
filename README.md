@@ -39,7 +39,7 @@ O app segue a divisão proposta pelo **Investidor Sardinha**:
 
 ## 🌐 Ver o projeto funcionando
 
-👉 [Acesse aqui o PoupaAI](https://poupa-ai-orpin.vercel.app/)  
+👉 [Acesse aqui o PoupaAI](https://poupa-ai-org.vercel.app/)  
 
 ---
 
