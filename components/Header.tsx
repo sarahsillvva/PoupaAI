@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ShoppingCart, FileDown, LogIn, LogOut, UserRound, ChevronDown, UserCog, Share2, Moon, Sun } from 'lucide-react';
 import type { User } from 'firebase/auth';
 import logoSrc from '../assets/logo-poupa-ai.svg';
+import pigLogoSrc from '../assets/pig-poupa-ai.svg';
 
 interface HeaderProps {
     onPurchaseAdvisor: () => void;
@@ -51,12 +52,13 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-40">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-2 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex-shrink-0">
-            <img src={logoSrc} alt="PoupaAI Logo" className="h-32 w-auto" />
+          <div className="flex min-w-0 flex-shrink-0 items-center">
+            <img src={pigLogoSrc} alt="Poupa Aí" className="h-11 w-12 object-contain sm:hidden" />
+            <img src={logoSrc} alt="PoupaAI Logo" className="hidden h-32 w-auto sm:block" />
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex min-w-0 items-center gap-1 sm:gap-3">
             <button
               type="button"
               onClick={toggleTheme}
@@ -71,14 +73,14 @@ const Header: React.FC<HeaderProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAccountMenuOpen(open => !open)}
-                  className="flex items-center gap-2 p-2 md:py-2 md:px-4 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="flex h-10 w-10 items-center justify-center gap-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-200 dark:hover:bg-gray-700 sm:h-auto sm:w-auto sm:px-4 sm:py-2"
                   aria-haspopup="menu"
                   aria-expanded={isAccountMenuOpen}
                   title="Abrir menu da conta"
                 >
                   <UserRound size={18} />
-                  <span className="max-w-28 truncate">{nickname || 'Minha conta'}</span>
-                  <ChevronDown size={15} className={`transition-transform ${isAccountMenuOpen ? 'rotate-180' : ''}`} />
+                  <span className="hidden max-w-28 truncate sm:inline">{nickname || 'Minha conta'}</span>
+                  <ChevronDown size={15} className={`hidden transition-transform sm:block ${isAccountMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isAccountMenuOpen && (
                   <div role="menu" className="absolute right-0 mt-2 w-52 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-700 dark:bg-gray-800">
