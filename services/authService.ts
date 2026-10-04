@@ -10,6 +10,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { clearStoredReferrer, getStoredReferrer } from './referralService';
 
 export interface SignUpData {
   name: string;
@@ -28,6 +29,7 @@ export const signUp = async ({ name, phone, email, password }: SignUpData): Prom
   const normalizedName = name.trim();
   const normalizedEmail = email.trim().toLowerCase();
   const credential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+  const referredByUid = getStoredReferrer();
 
   await updateProfile(credential.user, { displayName: normalizedName });
   await setDoc(doc(db, 'users', credential.user.uid), {
@@ -42,13 +44,16 @@ export const signUp = async ({ name, phone, email, password }: SignUpData): Prom
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     schemaVersion: 1,
+    ...(referredByUid && referredByUid !== credential.user.uid ? { referredByUid } : {}),
   });
+  clearStoredReferrer();
 
   return credential.user;
 };
 
 export const signIn = async (email: string, password: string): Promise<User> => {
   const credential = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+  clearStoredReferrer();
   return credential.user;
 };
 
@@ -61,6 +66,7 @@ export const signInWithGoogle = async (): Promise<User> => {
   const profile = await getDoc(profileRef);
 
   if (!profile.exists()) {
+    const referredByUid = getStoredReferrer();
     await setDoc(profileRef, {
       name: credential.user.displayName?.trim() || 'Usuário',
       email: credential.user.email?.toLowerCase() || '',
@@ -73,14 +79,40 @@ export const signInWithGoogle = async (): Promise<User> => {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       schemaVersion: 1,
+      ...(referredByUid && referredByUid !== credential.user.uid ? { referredByUid } : {}),
     });
   }
+
+  clearStoredReferrer();
 
   return credential.user;
 };
 
 export const requestPasswordReset = async (email: string): Promise<void> => {
   await sendPasswordResetEmail(auth, email.trim().toLowerCase());
+};
+
+export const getNickname = async (user: User): Promise<string> => {
+  const profile = await getDoc(doc(db, 'users', user.uid));
+  const nickname = profile.data()?.nickname;
+  return typeof nickname === 'string' && nickname.trim()
+    ? nickname.trim()
+    : user.displayName?.trim() || 'Minha conta';
+};
+
+export const updateNickname = async (user: User, nickname: string): Promise<string> => {
+  const normalizedNickname = nickname.trim();
+  if (normalizedNickname.length < 2 || normalizedNickname.length > 30) {
+    throw new Error('O apelido deve ter entre 2 e 30 caracteres.');
+  }
+
+  await updateProfile(user, { displayName: normalizedNickname });
+  await setDoc(doc(db, 'users', user.uid), {
+    nickname: normalizedNickname,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+
+  return normalizedNickname;
 };
 
 export const logOut = async (): Promise<void> => {

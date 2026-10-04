@@ -9,9 +9,12 @@ import type { TourStep } from './components/OnboardingTour';
 import FinalOnboardingWarning from './components/FinalOnboardingWarning';
 import AccountPromptModal from './components/AccountPromptModal';
 import AuthModal, { type AuthMode } from './components/AuthModal';
+import ProfileModal from './components/ProfileModal';
+import ReferralModal from './components/ReferralModal';
 import { auth } from './services/firebase';
-import { logOut } from './services/authService';
+import { getNickname, logOut } from './services/authService';
 import { migrateLocalDataToUser } from './services/apiService';
+import { captureReferralFromUrl } from './services/referralService';
 
 const tourSteps: TourStep[] = [
   {
@@ -60,6 +63,9 @@ function App() {
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [isDataReady, setIsDataReady] = useState(false);
   const [migrationError, setMigrationError] = useState<string | null>(null);
+  const [nickname, setNickname] = useState('');
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isReferralOpen, setIsReferralOpen] = useState(false);
 
   useEffect(() => {
     return onAuthStateChanged(auth, async currentUser => {
@@ -68,7 +74,13 @@ function App() {
       setMigrationError(null);
 
       try {
-        if (currentUser) await migrateLocalDataToUser(currentUser.uid);
+        if (currentUser) {
+          await migrateLocalDataToUser(currentUser.uid);
+          setNickname(await getNickname(currentUser));
+        } else {
+          setNickname('');
+          captureReferralFromUrl();
+        }
         setUser(currentUser);
         setIsDataReady(true);
       } catch (error) {
@@ -165,6 +177,18 @@ function App() {
         initialMode={authMode}
         onClose={() => setIsAuthModalOpen(false)}
       />
+      <ProfileModal
+        isOpen={isProfileOpen}
+        user={user}
+        nickname={nickname}
+        onClose={() => setIsProfileOpen(false)}
+        onNicknameChanged={setNickname}
+      />
+      <ReferralModal
+        isOpen={isReferralOpen}
+        userId={user?.uid ?? null}
+        onClose={() => setIsReferralOpen(false)}
+      />
       
       <Header
         onPurchaseAdvisor={handlePurchaseAdvisor}
@@ -172,6 +196,9 @@ function App() {
         user={user}
         onOpenAuth={() => openAuth('login')}
         onLogout={() => void logOut()}
+        nickname={nickname}
+        onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenReferral={() => setIsReferralOpen(true)}
       />
       <main className="flex-grow">
         {!isAuthReady ? (

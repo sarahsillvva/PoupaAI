@@ -12,21 +12,50 @@ service cloud.firestore {
       allow create: if isOwner(userId)
         && request.resource.data.keys().hasOnly([
           'name',
+          'nickname',
           'email',
           'phone',
           'phoneVerified',
           'plan',
           'createdAt',
           'updatedAt',
-          'schemaVersion'
+          'schemaVersion',
+          'referredByUid'
         ])
+        && (!('nickname' in request.resource.data)
+          || (request.resource.data.nickname is string
+            && request.resource.data.nickname.size() >= 2
+            && request.resource.data.nickname.size() <= 30))
+        && (!('referredByUid' in request.resource.data)
+          || (request.resource.data.referredByUid is string
+            && request.resource.data.referredByUid != userId
+            && request.resource.data.referredByUid.size() >= 20
+            && request.resource.data.referredByUid.size() <= 128))
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.plan.code == 'free'
         && request.resource.data.plan.status == 'active';
 
       allow update: if isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'name',
+          'nickname',
+          'email',
+          'phone',
+          'phoneVerified',
+          'plan',
+          'createdAt',
+          'updatedAt',
+          'schemaVersion',
+          'referredByUid'
+        ])
+        && (!('nickname' in request.resource.data)
+          || (request.resource.data.nickname is string
+            && request.resource.data.nickname.size() >= 2
+            && request.resource.data.nickname.size() <= 30))
         && request.resource.data.email == resource.data.email
         && request.resource.data.plan == resource.data.plan
+        && request.resource.data.get('referredByUid', null)
+          == resource.data.get('referredByUid', null)
         && request.resource.data.createdAt == resource.data.createdAt;
 
       allow delete: if false;
