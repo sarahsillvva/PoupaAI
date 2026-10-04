@@ -74,14 +74,14 @@ function App() {
       setMigrationError(null);
 
       try {
-        if (currentUser) {
+        if (currentUser?.emailVerified) {
           await migrateLocalDataToUser(currentUser.uid);
           setNickname(await getNickname(currentUser));
         } else {
           setNickname('');
-          captureReferralFromUrl();
+          if (!currentUser) captureReferralFromUrl();
         }
-        setUser(currentUser);
+        setUser(currentUser?.emailVerified ? currentUser : null);
         setIsDataReady(true);
       } catch (error) {
         console.error('Falha ao migrar os dados locais:', error);

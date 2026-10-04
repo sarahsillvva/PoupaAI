@@ -41,4 +41,5 @@ export const appCheck = initializeAppCheck(firebaseApp, {
 });
 
 export const auth = getAuth(firebaseApp);
+auth.languageCode = 'pt-BR';
 export const db = getFirestore(firebaseApp);

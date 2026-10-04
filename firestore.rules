@@ -6,8 +6,12 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
+    function isVerifiedOwner(userId) {
+      return isOwner(userId) && request.auth.token.email_verified == true;
+    }
+
     match /users/{userId} {
-      allow read: if isOwner(userId);
+      allow read: if isVerifiedOwner(userId);
 
       allow create: if isOwner(userId)
         && request.resource.data.keys().hasOnly([
@@ -35,7 +39,7 @@ service cloud.firestore {
         && request.resource.data.plan.code == 'free'
         && request.resource.data.plan.status == 'active';
 
-      allow update: if isOwner(userId)
+      allow update: if isVerifiedOwner(userId)
         && request.resource.data.keys().hasOnly([
           'name',
           'nickname',
@@ -61,15 +65,15 @@ service cloud.firestore {
       allow delete: if false;
 
       match /expenses/{expenseId} {
-        allow read, create, update, delete: if isOwner(userId);
+        allow read, create, update, delete: if isVerifiedOwner(userId);
       }
 
       match /financialSettings/{settingsId} {
-        allow read, create, update, delete: if isOwner(userId);
+        allow read, create, update, delete: if isVerifiedOwner(userId);
       }
 
       match /migrations/{migrationId} {
-        allow read, create, update: if isOwner(userId);
+        allow read, create, update: if isVerifiedOwner(userId);
         allow delete: if false;
       }
     }

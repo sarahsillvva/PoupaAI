@@ -1,6 +1,7 @@
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -46,13 +47,26 @@ export const signUp = async ({ name, phone, email, password }: SignUpData): Prom
     schemaVersion: 1,
     ...(referredByUid && referredByUid !== credential.user.uid ? { referredByUid } : {}),
   });
+  await sendEmailVerification(credential.user);
   clearStoredReferrer();
+  await signOut(auth);
 
   return credential.user;
 };
 
 export const signIn = async (email: string, password: string): Promise<User> => {
   const credential = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+  await credential.user.reload();
+  if (!credential.user.emailVerified) {
+    try {
+      await sendEmailVerification(credential.user);
+    } finally {
+      await signOut(auth);
+    }
+    throw Object.assign(new Error('Confirme seu e-mail antes de entrar.'), {
+      code: 'auth/email-not-verified',
+    });
+  }
   clearStoredReferrer();
   return credential.user;
 };
