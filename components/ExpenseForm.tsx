@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Expense, Category } from '../types';
 import { CATEGORIES } from '../constants';
 import { X } from 'lucide-react';
+import DatePicker from './common/DatePicker';
 
 interface ExpenseFormProps {
   onClose: () => void;
@@ -177,13 +178,11 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, onSaveAdd, onSaveEdi
             </div>
              <div>
                 <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Vencimento {totalInstallmentsNum > 1 ? '(1ª Parcela)' : ''} <span className="text-red-500">*</span></label>
-                <input
-                type="date"
-                id="dueDate"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className={`mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white ${errors.dueDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-                required
+                <DatePicker
+                  id="dueDate"
+                  value={dueDate}
+                  onChange={setDueDate}
+                  hasError={errors.dueDate}
                 />
             </div>
           </div>
