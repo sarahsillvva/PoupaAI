@@ -1,13 +1,17 @@
 import React from 'react';
-import { ShoppingCart, FileDown } from 'lucide-react';
+import { ShoppingCart, FileDown, LogIn, LogOut, UserRound } from 'lucide-react';
+import type { User } from 'firebase/auth';
 import { logoSrc } from '../constants';
 
 interface HeaderProps {
     onPurchaseAdvisor: () => void;
     onGeneratePDF: () => void;
+    user: User | null;
+    onOpenAuth: () => void;
+    onLogout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onPurchaseAdvisor, onGeneratePDF }) => {
+const Header: React.FC<HeaderProps> = ({ onPurchaseAdvisor, onGeneratePDF, user, onOpenAuth, onLogout }) => {
   return (
     <header className="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-40">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -16,6 +20,28 @@ const Header: React.FC<HeaderProps> = ({ onPurchaseAdvisor, onGeneratePDF }) => 
             <img src={logoSrc} alt="PoupaAI Logo" className="h-32 w-auto" />
           </div>
           <div className="flex items-center space-x-3">
+            {user ? (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="flex items-center gap-2 p-2 md:py-2 md:px-4 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                title="Sair da conta"
+              >
+                <UserRound size={18} />
+                <span className="hidden lg:inline max-w-28 truncate">{user.displayName?.split(' ')[0] || 'Minha conta'}</span>
+                <LogOut size={16} className="hidden md:block" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onOpenAuth}
+                className="flex items-center gap-2 p-2 md:py-2 md:px-4 rounded-md text-sm font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                title="Entrar"
+              >
+                <LogIn size={18} />
+                <span className="hidden md:inline">Entrar</span>
+              </button>
+            )}
             <button
               id="tour-purchase-advisor"
               onClick={onPurchaseAdvisor}

@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { PlusCircle } from 'lucide-react';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import Footer from './components/Footer';
 import OnboardingTour from './components/OnboardingTour';
 import type { TourStep } from './components/OnboardingTour';
 import FinalOnboardingWarning from './components/FinalOnboardingWarning';
+import AccountPromptModal from './components/AccountPromptModal';
+import AuthModal, { type AuthMode } from './components/AuthModal';
+import { auth } from './services/firebase';
+import { logOut } from './services/authService';
 
 const tourSteps: TourStep[] = [
   {
@@ -42,18 +47,51 @@ const tourSteps: TourStep[] = [
 
 const TOUR_STORAGE_KEY = 'poupa-ai-tour-completed';
 const FINAL_WARNING_STORAGE_KEY = 'poupa-ai-final-warning-seen';
+const ACCOUNT_PROMPT_SESSION_KEY = 'poupa-ai-account-prompt-dismissed';
 
 function App() {
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [isFinalWarningOpen, setIsFinalWarningOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isAccountPromptOpen, setIsAccountPromptOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>('login');
 
   useEffect(() => {
-    const tourCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
-    if (!tourCompleted) {
-      // Use a timeout to ensure the UI has rendered before starting the tour
-      setTimeout(() => setIsTourOpen(true), 500);
-    }
+    return onAuthStateChanged(auth, currentUser => {
+      setUser(currentUser);
+      setIsAuthReady(true);
+    });
   }, []);
+
+  useEffect(() => {
+    if (!isAuthReady) return;
+
+    if (!user && !sessionStorage.getItem(ACCOUNT_PROMPT_SESSION_KEY)) {
+      setIsAccountPromptOpen(true);
+      return;
+    }
+
+    if (!localStorage.getItem(TOUR_STORAGE_KEY)) {
+      const timeout = window.setTimeout(() => setIsTourOpen(true), 500);
+      return () => window.clearTimeout(timeout);
+    }
+  }, [isAuthReady, user]);
+
+  const openAuth = (mode: AuthMode) => {
+    setAuthMode(mode);
+    setIsAccountPromptOpen(false);
+    setIsAuthModalOpen(true);
+  };
+
+  const dismissAccountPrompt = () => {
+    sessionStorage.setItem(ACCOUNT_PROMPT_SESSION_KEY, 'true');
+    setIsAccountPromptOpen(false);
+    if (!localStorage.getItem(TOUR_STORAGE_KEY)) {
+      window.setTimeout(() => setIsTourOpen(true), 300);
+    }
+  };
 
   const handleTourComplete = () => {
     localStorage.setItem(TOUR_STORAGE_KEY, 'true');
@@ -86,10 +124,24 @@ function App() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 font-sans flex flex-col">
       {isTourOpen && <OnboardingTour steps={tourSteps} onComplete={handleTourComplete} />}
       {isFinalWarningOpen && <FinalOnboardingWarning onClose={handleCloseFinalWarning} />}
+      {isAccountPromptOpen && (
+        <AccountPromptModal
+          onCreateAccount={() => openAuth('signup')}
+          onDismiss={dismissAccountPrompt}
+        />
+      )}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        initialMode={authMode}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
       
       <Header
         onPurchaseAdvisor={handlePurchaseAdvisor}
         onGeneratePDF={handleGeneratePDF}
+        user={user}
+        onOpenAuth={() => openAuth('login')}
+        onLogout={() => void logOut()}
       />
       <main className="flex-grow">
         <Dashboard />
