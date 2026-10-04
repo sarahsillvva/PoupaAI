@@ -11,6 +11,7 @@ import AccountPromptModal from './components/AccountPromptModal';
 import AuthModal, { type AuthMode } from './components/AuthModal';
 import { auth } from './services/firebase';
 import { logOut } from './services/authService';
+import { migrateLocalDataToUser } from './services/apiService';
 
 const tourSteps: TourStep[] = [
   {
@@ -57,16 +58,45 @@ function App() {
   const [isAccountPromptOpen, setIsAccountPromptOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
+  const [isDataReady, setIsDataReady] = useState(false);
+  const [migrationError, setMigrationError] = useState<string | null>(null);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, currentUser => {
-      setUser(currentUser);
-      setIsAuthReady(true);
+    return onAuthStateChanged(auth, async currentUser => {
+      setIsAuthReady(false);
+      setIsDataReady(false);
+      setMigrationError(null);
+
+      try {
+        if (currentUser) await migrateLocalDataToUser(currentUser.uid);
+        setUser(currentUser);
+        setIsDataReady(true);
+      } catch (error) {
+        console.error('Falha ao migrar os dados locais:', error);
+        setUser(currentUser);
+        setMigrationError(error instanceof Error ? error.message : 'Não foi possível proteger seus dados agora.');
+      } finally {
+        setIsAuthReady(true);
+      }
     });
   }, []);
 
+  const retryMigration = async () => {
+    if (!auth.currentUser) return;
+    setIsAuthReady(false);
+    setMigrationError(null);
+    try {
+      await migrateLocalDataToUser(auth.currentUser.uid);
+      setIsDataReady(true);
+    } catch (error) {
+      setMigrationError(error instanceof Error ? error.message : 'Não foi possível proteger seus dados agora.');
+    } finally {
+      setIsAuthReady(true);
+    }
+  };
+
   useEffect(() => {
-    if (!isAuthReady) return;
+    if (!isAuthReady || !isDataReady) return;
 
     if (!user && !sessionStorage.getItem(ACCOUNT_PROMPT_SESSION_KEY)) {
       setIsAccountPromptOpen(true);
@@ -77,7 +107,7 @@ function App() {
       const timeout = window.setTimeout(() => setIsTourOpen(true), 500);
       return () => window.clearTimeout(timeout);
     }
-  }, [isAuthReady, user]);
+  }, [isAuthReady, isDataReady, user]);
 
   const openAuth = (mode: AuthMode) => {
     setAuthMode(mode);
@@ -144,7 +174,22 @@ function App() {
         onLogout={() => void logOut()}
       />
       <main className="flex-grow">
-        <Dashboard />
+        {!isAuthReady ? (
+          <div className="flex min-h-[60vh] items-center justify-center p-6 text-center text-gray-600 dark:text-gray-300">
+            Protegendo e sincronizando seus dados...
+          </div>
+        ) : migrationError ? (
+          <div className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center p-6 text-center">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Seus dados continuam seguros neste navegador</h2>
+            <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">{migrationError}</p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Nada foi apagado. Verifique sua conexão e tente novamente.</p>
+            <button type="button" onClick={() => void retryMigration()} className="mt-5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+              Tentar novamente
+            </button>
+          </div>
+        ) : isDataReady ? (
+          <Dashboard key={user?.uid ?? 'guest'} />
+        ) : null}
       </main>
 
       <Footer />
