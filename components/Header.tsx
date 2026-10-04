@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ShoppingCart, FileDown, LogIn, LogOut, UserRound, ChevronDown, UserCog, Share2 } from 'lucide-react';
+import { ShoppingCart, FileDown, LogIn, LogOut, UserRound, ChevronDown, UserCog, Share2, Moon, Sun } from 'lucide-react';
 import type { User } from 'firebase/auth';
-import { logoSrc } from '../constants';
+import logoSrc from '../assets/logo-poupa-ai.svg';
 
 interface HeaderProps {
     onPurchaseAdvisor: () => void;
@@ -25,6 +25,7 @@ const Header: React.FC<HeaderProps> = ({
   onOpenReferral,
 }) => {
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const accountMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,6 +42,13 @@ const Header: React.FC<HeaderProps> = ({
     action();
   };
 
+  const toggleTheme = () => {
+    const nextIsDark = !isDarkMode;
+    document.documentElement.classList.toggle('dark', nextIsDark);
+    localStorage.setItem('poupa-ai-theme', nextIsDark ? 'dark' : 'light');
+    setIsDarkMode(nextIsDark);
+  };
+
   return (
     <header className="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-40">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -49,6 +57,15 @@ const Header: React.FC<HeaderProps> = ({
             <img src={logoSrc} alt="PoupaAI Logo" className="h-32 w-auto" />
           </div>
           <div className="flex items-center space-x-3">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-amber-300 dark:hover:bg-gray-700"
+              aria-label={isDarkMode ? 'Ativar modo claro' : 'Ativar modo escuro'}
+              title={isDarkMode ? 'Ativar modo claro' : 'Ativar modo escuro'}
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
             {user ? (
               <div ref={accountMenuRef} className="relative">
                 <button

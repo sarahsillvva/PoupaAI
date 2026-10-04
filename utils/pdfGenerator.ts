@@ -1,5 +1,6 @@
 import { Expense } from '../types';
-import { CATEGORIES, logoSrc } from '../constants';
+import { CATEGORIES } from '../constants';
+import logoSrc from '../assets/logo-poupa-ai.svg';
 
 declare const jspdf: any;
 

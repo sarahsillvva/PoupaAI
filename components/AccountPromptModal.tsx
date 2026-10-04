@@ -1,5 +1,5 @@
 import React from 'react';
-import { pigLogoSrc } from '../constants';
+import pigLogoSrc from '../assets/pig-poupa-ai.svg';
 
 interface AccountPromptModalProps {
   onCreateAccount: () => void;
