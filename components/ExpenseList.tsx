@@ -1,21 +1,30 @@
 import React from 'react';
 import { Expense } from '../types';
 import { CATEGORIES } from '../constants';
-import { Edit, Trash2, Repeat } from 'lucide-react';
+import { Edit, Trash2, Repeat, LoaderCircle } from 'lucide-react';
 import Card from './common/Card';
 
 interface ExpenseListProps {
   expenses: Expense[];
   onEdit: (expense: Expense) => void;
   onDelete: (expense: Expense) => void;
+  isLoading?: boolean;
 }
 
-const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, onEdit, onDelete }) => {
+const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, onEdit, onDelete, isLoading = false }) => {
   const sortedExpenses = [...expenses].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
   return (
     <Card>
-      <div className="p-6">
+      <div className="relative p-6" aria-busy={isLoading}>
+        {isLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/80 backdrop-blur-[1px] dark:bg-gray-800/80">
+            <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-md dark:bg-gray-700 dark:text-gray-200">
+              <LoaderCircle size={19} className="animate-spin text-indigo-600" />
+              Excluindo despesa...
+            </div>
+          </div>
+        )}
         <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Despesas do Mês</h3>
         {sortedExpenses.length > 0 ? (
           <div className="overflow-x-auto">
@@ -68,10 +77,10 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, onEdit, onDelete })
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-3">
-                        <button onClick={() => onEdit(expense)} className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-200" title="Editar Despesa">
+                        <button disabled={isLoading} onClick={() => onEdit(expense)} className="text-indigo-600 hover:text-indigo-900 disabled:opacity-40 dark:text-indigo-400 dark:hover:text-indigo-200" title="Editar Despesa">
                           <Edit size={18} />
                         </button>
-                        <button onClick={() => onDelete(expense)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200" title="Excluir Despesa">
+                        <button disabled={isLoading} onClick={() => onDelete(expense)} className="text-red-600 hover:text-red-900 disabled:opacity-40 dark:text-red-400 dark:hover:text-red-200" title="Excluir Despesa">
                           <Trash2 size={18} />
                         </button>
                       </div>

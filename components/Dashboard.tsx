@@ -31,6 +31,8 @@ const Dashboard: React.FC = () => {
   
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
+  const [deletingModule, setDeletingModule] = useState<'personal' | 'third-party' | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
 
   const [categoryConfig, setCategoryConfig] = useState<Record<Category, CategoryInfo> | null>(null);
   const [isBudgetConfigOpen, setIsBudgetConfigOpen] = useState(false);
@@ -228,6 +230,10 @@ const Dashboard: React.FC = () => {
   
   const handleDeleteConfirm = async () => {
     if (!expenseToDelete) return;
+    const expenseBeingDeleted = expenseToDelete;
+    setDeletingModule(expenseBeingDeleted.payer ? 'third-party' : 'personal');
+    setMutationError(null);
+    setIsWarningModalOpen(false);
     try {
       // Se for uma despesa recorrente, define uma data de término em vez de excluir
       if (expenseToDelete.recurrence === 'monthly' && expenseToDelete.originalId) {
@@ -241,17 +247,24 @@ const Dashboard: React.FC = () => {
             ...originalExpense,
             recurrenceEndDate: recurrenceEndDate.toISOString().split('T')[0],
           };
-          await api.updateExpense(updatedExpense);
+          const updatedExpenses = await api.updateExpense(updatedExpense);
+          setExpenses(updatedExpenses);
         }
       } else {
         // Lógica de exclusão padrão para despesas normais e parceladas
-        await api.deleteExpense(expenseToDelete.originalId ?? expenseToDelete.id);
+        const originalId = expenseBeingDeleted.originalId ?? expenseBeingDeleted.id;
+        const storedExpense = expenses.find(expense => expense.id === originalId);
+        await api.deleteExpense(originalId);
+        setExpenses(currentExpenses => storedExpense?.groupId
+          ? currentExpenses.filter(expense => expense.groupId !== storedExpense.groupId)
+          : currentExpenses.filter(expense => expense.id !== originalId));
       }
-      await fetchData(); // Refetch
-      setIsWarningModalOpen(false);
       setExpenseToDelete(null);
     } catch (err) {
-      setError('Falha ao deletar despesa.');
+      console.error(err);
+      setMutationError('Não foi possível excluir a despesa. Seus dados foram mantidos; tente novamente.');
+    } finally {
+      setDeletingModule(null);
     }
   };
 
@@ -305,6 +318,12 @@ const Dashboard: React.FC = () => {
 
   return (
     <main className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      {mutationError && (
+        <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+          <span>{mutationError}</span>
+          <button type="button" onClick={() => setMutationError(null)} className="font-semibold hover:underline">Fechar</button>
+        </div>
+      )}
       <MonthNavigator 
         viewDate={viewDate}
         onPreviousMonth={handlePreviousMonth}
@@ -322,11 +341,13 @@ const Dashboard: React.FC = () => {
             expenses={personalExpenses}
             onEdit={handleEditExpense}
             onDelete={handleDeleteRequest}
+            isLoading={deletingModule === 'personal'}
           />
            <ThirdPartyExpensesList
             expenses={thirdPartyExpenses}
             onEdit={handleEditExpense}
             onDelete={handleDeleteRequest}
+            isLoading={deletingModule === 'third-party'}
           />
         </div>
         <div className="space-y-6">

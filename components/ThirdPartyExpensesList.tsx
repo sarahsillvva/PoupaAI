@@ -1,16 +1,17 @@
 import React, { useMemo } from 'react';
 import { Expense } from '../types';
 import { CATEGORIES } from '../constants';
-import { Edit, Trash2, Users } from 'lucide-react';
+import { Edit, Trash2, Users, LoaderCircle } from 'lucide-react';
 import Card from './common/Card';
 
 interface ThirdPartyExpensesListProps {
   expenses: Expense[];
   onEdit: (expense: Expense) => void;
   onDelete: (expense: Expense) => void;
+  isLoading?: boolean;
 }
 
-const ThirdPartyExpensesList: React.FC<ThirdPartyExpensesListProps> = ({ expenses, onEdit, onDelete }) => {
+const ThirdPartyExpensesList: React.FC<ThirdPartyExpensesListProps> = ({ expenses, onEdit, onDelete, isLoading = false }) => {
   const groupedExpenses = useMemo(() => {
     type GroupedData = Record<string, { expenses: Expense[], total: number }>;
     // FIX: Explicitly type the accumulator in the reduce function to prevent its values from being inferred as 'unknown'.
@@ -25,7 +26,10 @@ const ThirdPartyExpensesList: React.FC<ThirdPartyExpensesListProps> = ({ expense
     }, {} as GroupedData);
   }, [expenses]);
 
-  const sortedPayers = Object.entries(groupedExpenses).sort((a, b) => a[0].localeCompare(b[0]));
+  const sortedPayers = (Object.entries(groupedExpenses) as Array<[
+    string,
+    { expenses: Expense[]; total: number },
+  ]>).sort((a, b) => a[0].localeCompare(b[0]));
 
   if (expenses.length === 0) {
     return null; // Não renderiza o card se não houver despesas de terceiros
@@ -33,7 +37,15 @@ const ThirdPartyExpensesList: React.FC<ThirdPartyExpensesListProps> = ({ expense
 
   return (
     <Card>
-      <div className="p-6">
+      <div className="relative p-6" aria-busy={isLoading}>
+        {isLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/80 backdrop-blur-[1px] dark:bg-gray-800/80">
+            <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-md dark:bg-gray-700 dark:text-gray-200">
+              <LoaderCircle size={19} className="animate-spin text-purple-600" />
+              Excluindo despesa...
+            </div>
+          </div>
+        )}
         <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
             <Users className="mr-2 text-purple-500"/>
             Contas de Terceiros
@@ -70,10 +82,10 @@ const ThirdPartyExpensesList: React.FC<ThirdPartyExpensesListProps> = ({ expense
                           </td>
                           <td className="py-3 pl-4 text-right">
                             <div className="flex items-center justify-end space-x-3">
-                                <button onClick={() => onEdit(expense)} className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-200" title="Editar Despesa">
+                                <button disabled={isLoading} onClick={() => onEdit(expense)} className="text-indigo-600 hover:text-indigo-900 disabled:opacity-40 dark:text-indigo-400 dark:hover:text-indigo-200" title="Editar Despesa">
                                 <Edit size={18} />
                                 </button>
-                                <button onClick={() => onDelete(expense)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200" title="Excluir Despesa">
+                                <button disabled={isLoading} onClick={() => onDelete(expense)} className="text-red-600 hover:text-red-900 disabled:opacity-40 dark:text-red-400 dark:hover:text-red-200" title="Excluir Despesa">
                                 <Trash2 size={18} />
                                 </button>
                             </div>
