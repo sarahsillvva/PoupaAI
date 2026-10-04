@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { Expense, Category } from '../types';
 import { CATEGORIES } from '../constants';
 import Card from './common/Card';
@@ -20,9 +20,9 @@ const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ expenses, totalInco
     return Object.entries(categoryTotals)
       .map(([category, amount]) => ({
         name: CATEGORIES[category as Category].name,
-        value: amount,
+        value: Number(amount),
         color: CATEGORIES[category as Category].color,
-        percentage: totalIncome > 0 ? (amount / totalIncome) * 100 : 0,
+        percentage: totalIncome > 0 ? (Number(amount) / totalIncome) * 100 : 0,
       }))
       .sort((a, b) => b.value - a.value);
   }, [expenses, totalIncome]);
@@ -32,7 +32,7 @@ const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ expenses, totalInco
       <Card>
         <div className="p-6">
           <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Divisão de Gastos por Categoria</h3>
-          <div className="h-80 flex items-center justify-center text-gray-500 dark:text-gray-400">
+          <div className="flex h-48 items-center justify-center text-center text-gray-500 dark:text-gray-400 sm:h-64">
             Nenhuma despesa registrada para este mês.
           </div>
         </div>
@@ -57,17 +57,17 @@ const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ expenses, totalInco
 
   return (
     <Card>
-       <div className="p-6">
-        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Divisão de Gastos por Categoria</h3>
-        <div style={{ width: '100%', height: 320 }}>
-            <ResponsiveContainer>
+       <div className="p-4 sm:p-6">
+        <h3 className="mb-3 text-base font-semibold text-gray-700 dark:text-gray-300 sm:text-lg">Divisão de Gastos por Categoria</h3>
+        <div className="mx-auto h-52 w-full max-w-md sm:h-64 lg:h-72">
+            <ResponsiveContainer width="100%" height="100%">
             <PieChart>
                 <Pie
                 data={data}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={100}
+                outerRadius="82%"
                 fill="#8884d8"
                 dataKey="value"
                 >
@@ -76,9 +76,17 @@ const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ expenses, totalInco
                 ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                <Legend iconSize={10} layout="vertical" verticalAlign="middle" align="right" />
             </PieChart>
             </ResponsiveContainer>
+        </div>
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {data.map(entry => (
+            <div key={entry.name} className="flex min-w-0 items-center gap-2 text-xs text-gray-600 dark:text-gray-300 sm:text-sm">
+              <span className="h-2.5 w-2.5 flex-none rounded-full" style={{ backgroundColor: entry.color }} />
+              <span className="truncate">{entry.name}</span>
+              <span className="ml-auto flex-none font-medium">{entry.percentage.toFixed(1)}%</span>
+            </div>
+          ))}
         </div>
       </div>
     </Card>
