@@ -60,7 +60,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, user, nickname, onC
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+    <div data-clarity-mask="true" className="fixed inset-0 z-[70] flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-labelledby="profile-title">
       <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl dark:bg-gray-800 sm:p-6">
         <div className="flex items-center justify-between">
           <h2 id="profile-title" className="text-xl font-bold text-gray-900 dark:text-white">Meu perfil</h2>

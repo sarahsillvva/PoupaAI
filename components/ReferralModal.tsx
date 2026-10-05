@@ -28,7 +28,7 @@ const ReferralModal: React.FC<ReferralModalProps> = ({ isOpen, userId, onClose }
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-labelledby="referral-title">
+    <div data-clarity-mask="true" className="fixed inset-0 z-[70] flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-labelledby="referral-title">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
         <div className="flex items-center justify-between">
           <h2 id="referral-title" className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white"><Share2 size={21} /> Indicar o Poupa Aí</h2>

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
+    "@microsoft/clarity": "^1.0.2",
     "firebase": "^12.19.0",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",

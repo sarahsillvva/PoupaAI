@@ -26,6 +26,9 @@ const authErrorMessage = (error: unknown) => {
     'auth/missing-password': 'Digite sua senha.',
     'auth/popup-blocked': 'O navegador bloqueou a janela do Google. Permita pop-ups e tente novamente.',
     'auth/popup-closed-by-user': 'A entrada com Google foi cancelada.',
+    'auth/unauthorized-domain': 'Este endereço ainda não está autorizado para entrar com Google. Avise o suporte do Poupa Aí.',
+    'auth/operation-not-allowed': 'A entrada com Google não está habilitada neste ambiente.',
+    'auth/network-request-failed': 'Não foi possível conectar ao Google. Verifique sua internet e tente novamente.',
     'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
     'auth/weak-password': 'Use uma senha com pelo menos 6 caracteres.',
   };
@@ -159,7 +162,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, initialMode = 'login', on
   const requiredMark = <span className="text-red-500" aria-hidden="true"> *</span>;
 
   return (
-    <div className="fixed inset-0 h-screen w-screen bg-black/60 z-[10004] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <div data-clarity-mask="true" className="fixed inset-0 h-screen w-screen bg-black/60 z-[10004] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="auth-title">
       <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-800">
         <div className="flex items-center justify-between border-b border-gray-200 p-6 dark:border-gray-700">
           <div className="flex items-center gap-3">

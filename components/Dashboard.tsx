@@ -317,7 +317,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <main className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+    <main data-clarity-mask="true" className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
       {mutationError && (
         <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
           <span>{mutationError}</span>

@@ -53,6 +53,10 @@ const TOUR_STORAGE_KEY = 'poupa-ai-tour-completed';
 const FINAL_WARNING_STORAGE_KEY = 'poupa-ai-final-warning-seen';
 const ACCOUNT_PROMPT_SESSION_KEY = 'poupa-ai-account-prompt-dismissed';
 
+const getTourStorageKey = (user: User | null) => user
+  ? `${TOUR_STORAGE_KEY}:${user.uid}`
+  : TOUR_STORAGE_KEY;
+
 function App() {
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [isFinalWarningOpen, setIsFinalWarningOpen] = useState(false);
@@ -77,6 +81,8 @@ function App() {
         if (currentUser?.emailVerified) {
           await migrateLocalDataToUser(currentUser.uid);
           setNickname(await getNickname(currentUser));
+          setIsAccountPromptOpen(false);
+          setIsFinalWarningOpen(false);
         } else {
           setNickname('');
           if (!currentUser) captureReferralFromUrl();
@@ -115,7 +121,7 @@ function App() {
       return;
     }
 
-    if (!localStorage.getItem(TOUR_STORAGE_KEY)) {
+    if (!localStorage.getItem(getTourStorageKey(user))) {
       const timeout = window.setTimeout(() => setIsTourOpen(true), 500);
       return () => window.clearTimeout(timeout);
     }
@@ -130,17 +136,17 @@ function App() {
   const dismissAccountPrompt = () => {
     sessionStorage.setItem(ACCOUNT_PROMPT_SESSION_KEY, 'true');
     setIsAccountPromptOpen(false);
-    if (!localStorage.getItem(TOUR_STORAGE_KEY)) {
+    if (!localStorage.getItem(getTourStorageKey(null))) {
       window.setTimeout(() => setIsTourOpen(true), 300);
     }
   };
 
   const handleTourComplete = () => {
-    localStorage.setItem(TOUR_STORAGE_KEY, 'true');
+    localStorage.setItem(getTourStorageKey(user), 'true');
     setIsTourOpen(false);
 
     const finalWarningSeen = localStorage.getItem(FINAL_WARNING_STORAGE_KEY);
-    if (!finalWarningSeen) {
+    if (!user && !finalWarningSeen) {
       setIsFinalWarningOpen(true);
     }
   };
@@ -165,7 +171,15 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 font-sans flex flex-col">
       {isTourOpen && <OnboardingTour steps={tourSteps} onComplete={handleTourComplete} />}
-      {isFinalWarningOpen && <FinalOnboardingWarning onClose={handleCloseFinalWarning} />}
+      {isFinalWarningOpen && !user && (
+        <FinalOnboardingWarning
+          onClose={handleCloseFinalWarning}
+          onCreateAccount={() => {
+            handleCloseFinalWarning();
+            openAuth('signup');
+          }}
+        />
+      )}
       {isAccountPromptOpen && (
         <AccountPromptModal
           onCreateAccount={() => openAuth('signup')}
